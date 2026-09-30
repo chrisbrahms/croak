@@ -243,6 +243,20 @@ def test_unknown_interaction_raises(gaussian_spectrum):
         mc.predicted_marginal(omega, s, "xpw")
 
 
+def test_interaction_without_marginal_model_raises(gaussian_spectrum, monkeypatch):
+    """A registered geometry with no marginal model fails loudly, not as SD."""
+    from croak import interactions
+
+    class FourthHarmonic(interactions.Interaction):
+        name = "fhg"
+        omega0_scale = 4.0
+
+    monkeypatch.setitem(interactions.INTERACTIONS, "fhg", FourthHarmonic())
+    omega, s, _, _ = gaussian_spectrum
+    with pytest.raises(ValueError, match="no marginal prediction"):
+        mc.predicted_marginal(omega, s, "fhg")
+
+
 def test_degenerate_axis_raises():
     with pytest.raises(ValueError, match="at least 4 samples"):
         mc.predicted_marginal(np.array([0.0, 1.0]), np.array([1.0, 1.0]), "shg")

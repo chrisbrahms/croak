@@ -342,7 +342,8 @@ def predicted_marginal(
     Raises
     ------
     ValueError
-        If ``interaction`` is unknown or ``omega``/``spectrum`` are degenerate.
+        If ``interaction`` is unknown or has no marginal model, or
+        ``omega``/``spectrum`` are degenerate.
     """
     name = _normalise_interaction(interaction)
     omega = np.asarray(omega, dtype=float)
@@ -369,8 +370,12 @@ def predicted_marginal(
             # E^2(t) G(t - tau): the undelayed factor is E^2, the gate is E itself
             # (unconjugated), so the marginal is |F{E^2}|^2 * S(+omega).
             shape = np.convolve(probe, spectrum)
-        else:  # sd: E^2 conj(G) -> |F{E^2}|^2 * S(-omega)
+        elif name == "sd":  # E^2 conj(G) -> |F{E^2}|^2 * S(-omega)
             shape = np.convolve(probe, spectrum[::-1])
+        else:
+            # A geometry registered without a marginal model: refuse rather than
+            # silently reuse another geometry's factorisation.
+            raise ValueError(f"no marginal prediction for the {name!r} interaction")
         # The predicted (TL) marginal width is the width of the convolved shape.
         bracket = (sigma_s, _width_of_shape(shape, domega))
         rms = bracket[1] if bracket[1] is not None else sigma_s
