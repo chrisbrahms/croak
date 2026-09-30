@@ -32,8 +32,8 @@ def banner(title: str) -> None:
 
 
 def thin_examples() -> None:
-    """Gaussian and sech pulses across all three interactions, clean + noisy."""
-    banner("Thin-medium retrieval (Gaussian & sech, PG/SD/SHG)")
+    """Gaussian and sech pulses across all four interactions, clean + noisy."""
+    banner("Thin-medium retrieval (Gaussian & sech, PG/SD/SHG/THG)")
     g = croak.Grid(128, dt=0.3e-15)
     delays = np.linspace(-18e-15, 18e-15, 87)
     rng = np.random.default_rng(0)
@@ -48,7 +48,7 @@ def thin_examples() -> None:
     )
     for label, ew in pulses.items():
         true_fwhm = measure_fwhm(g.t, np.abs(g.ifft(ew)) ** 2) * 1e15
-        for interaction in ("pg", "sd", "shg"):
+        for interaction in ("pg", "sd", "shg", "thg"):
             clean = croak.maketrace(g.omega, delays, ew, interaction)
             for sigma in (0.0, 0.01):
                 trace = clean
@@ -59,6 +59,10 @@ def thin_examples() -> None:
                         None,
                     )
                 algo = "copra" if sigma == 0 else "lbfgs"
+                # A chirp-free guess. For THG on the GDD Gaussian it sits on the
+                # saddle between the +GDD and -GDD solutions, which give the very
+                # same THG trace, so convergence there is slow (a slightly
+                # chirped guess of either sign converges at once).
                 near = croak.gaussian_pulse(g, 1.8e-15)
                 res = croak.retrieve(
                     trace,
