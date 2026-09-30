@@ -826,7 +826,7 @@ def resolve_time_direction(
     Notes
     -----
     Returns the result unchanged for interactions that fix the direction of time
-    (SD, PG), where the retrieved orientation is already meaningful and flipping
+    (THG, SD, PG), where the retrieved orientation is already meaningful and flipping
     it would be wrong. See
     :attr:`~croak.interactions.Interaction.time_reversal_ambiguous`.
     """

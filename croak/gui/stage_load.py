@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .. import io
-from ..grid import fundamental_band
+from ..grid import HarmonicBandError, fundamental_band
 from ..interactions import INTERACTIONS, get_interaction
 from ..plotting import cmap_white, signed_pcolormesh
 from ..session.pipeline import assemble_load_data
@@ -116,7 +116,7 @@ def compute_preproc_defaults(data) -> PreprocParams:
     scale = get_interaction(data["interaction"]).omega0_scale
     try:
         band_lo, band_hi = fundamental_band(lmin * 1e-9, lmax * 1e-9, scale)
-    except ValueError:
+    except HarmonicBandError:
         # The file's wavelength extent (the spectrometer range, not the signal
         # band) is too broad to be any harmonic trace — e.g. a fundamental-range
         # file loaded as SHG. A default must still exist, so fall back to the

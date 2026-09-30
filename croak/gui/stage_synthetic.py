@@ -311,9 +311,8 @@ class StageSynthetic(Stage):
         """Mirror the trace λ window onto the independent spectrum (when enabled).
 
         The fundamental spectrum sits at the signal wavelength scaled by the
-        interaction's ``omega0_scale`` (×2 for SHG, ×3 for THG, ×1 for PG/SD), and
-        the point
-        count tracks ``# λ points``.
+        interaction's ``omega0_scale`` (×2 for SHG, ×3 for THG, ×1 for PG/SD),
+        and the point count tracks ``# λ points``.
         """
         if not self.spec_mirror.isChecked():
             return

@@ -36,6 +36,7 @@ __all__ = [
     "gridparams_omega",
     "gridparams_lambda",
     "fundamental_band",
+    "HarmonicBandError",
 ]
 
 
@@ -197,16 +198,21 @@ def gridparams_lambda(
     )
 
 
+class HarmonicBandError(ValueError):
+    """Raised when a harmonic trace is too broad for any fundamental band."""
+
+
 def fundamental_band(
     lambda_min: float, lambda_max: float, omega0_scale: float
 ) -> tuple[float, float]:
-    r"""Fundamental wavelength band whose retrieval grid holds a harmonic trace.
+    r"""Return the fundamental wavelength band whose grid holds a harmonic trace.
 
-    The retrieval grid is built from the *fundamental* band
-    ``(lam_min, lam_max)``, centred on its midpoint frequency :math:`\omega_0`
-    (:func:`gridparams_omega`). The trace is placed on the same baseband axis
-    around the signal carrier :math:`n\omega_0`, where :math:`n` is
-    ``omega0_scale``, so it gets **the same angular-frequency span**. A trace
+    The retrieval grid is built from the *fundamental* band (the ``lam_min`` and
+    ``lam_max`` of :func:`croak.preprocess.load_and_clean`), centred on its
+    midpoint frequency :math:`\omega_0` (:func:`gridparams_omega`). The trace is
+    placed on the same baseband axis around the signal carrier :math:`n\omega_0`,
+    where :math:`n` is ``omega0_scale``, so it gets **the same angular-frequency
+    span**. A trace
     occupying :math:`[\Omega_a, \Omega_b]` therefore needs
 
     .. math::
@@ -236,9 +242,11 @@ def fundamental_band(
     ------
     ValueError
         If the wavelengths are not positive and ascending, ``omega0_scale`` is not
-        positive, or the trace is too broad for any fundamental band (its span
-        exceeds its centre frequency divided by ``omega0_scale``, which would put
-        the band's lower edge at or below zero frequency).
+        positive, or the trace is too broad for any fundamental band: its full
+        frequency span is at least twice its centre frequency divided by
+        ``omega0_scale``, which would put the band's lower edge at or below zero
+        frequency. The last case raises :class:`HarmonicBandError`, a
+        :class:`ValueError` subclass callers can handle on its own.
 
     Examples
     --------
@@ -261,7 +269,7 @@ def fundamental_band(
     omega0 = 0.5 * (omega_a + omega_b) / omega0_scale
     half_span = 0.5 * (omega_b - omega_a)
     if half_span >= omega0:
-        raise ValueError(
+        raise HarmonicBandError(
             "the trace is too broad for a fundamental band at this harmonic order: "
             "its lower edge would reach zero frequency"
         )

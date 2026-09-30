@@ -29,7 +29,6 @@ semantic versioning.
   centroid anchor holds for any temporally symmetric intensity. It needs the
   instantaneous frequency to be odd about a symmetric intensity; a cubic temporal
   phase breaks it.
-
 - **Back at Stage 1 could silently lose the session.** Pressing Back once too
   often (or Main menu) reached the welcome menu, whose every entry starts a new
   session, so going forward again found the loaded trace and retrieval gone. The

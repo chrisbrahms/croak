@@ -72,7 +72,13 @@ from .covariance import (
 from .dispersion import apply_dispersion
 from .forward import ForwardModel, maketrace
 from .forward_jax import make_signal_fn, make_trace_fn, maketrace_jax
-from .grid import Grid, fundamental_band, gridparams_lambda, gridparams_omega
+from .grid import (
+    Grid,
+    HarmonicBandError,
+    fundamental_band,
+    gridparams_lambda,
+    gridparams_omega,
+)
 from .interactions import PG, SD, SHG, THG, get_interaction
 from .lbfgs import LBFGS
 from .lbfgs_ad import LBFGSAD
@@ -214,6 +220,7 @@ __all__ = [
     "gridparams_omega",
     "gridparams_lambda",
     "fundamental_band",
+    "HarmonicBandError",
     # interactions
     "SHG",
     "THG",

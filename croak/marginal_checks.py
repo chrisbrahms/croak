@@ -337,9 +337,8 @@ def predicted_marginal(
     Returns
     -------
     MarginalPrediction
-        The predicted marginal on its own (doubled for SHG, tripled for THG)
-        frequency axis and
-        the centroid/width anchors.
+        The predicted marginal on its own frequency axis (doubled for SHG,
+        tripled for THG) and the centroid/width anchors.
 
     Raises
     ------

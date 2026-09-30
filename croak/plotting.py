@@ -2000,9 +2000,8 @@ def plot_retrieval(
     residual panels, as ``(f_min, f_max)`` in Hz; the default shows the whole
     retrieval grid. The two are separate because the trace sits at the *signal*
     frequency, which for SHG is twice the pulse's (three times for THG). Reach
-    for ``flim`` when the
-    retrieval grid is much wider than the signal — typical when retrieving
-    directly on a synthesis grid rather than on one cropped by
+    for ``flim`` when the retrieval grid is much wider than the signal — typical
+    when retrieving directly on a synthesis grid rather than on one cropped by
     :func:`~croak.preprocess.load_and_clean` — where the trace would otherwise be
     a thin stripe in a mostly empty axis.
 

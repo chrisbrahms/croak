@@ -139,11 +139,12 @@ class THG(Interaction):
     is therefore the complex conjugate of the ordinary derivative times ``s_bar``.
 
     Unlike SHG the two arms enter asymmetrically (``E**2`` against ``G``): time
-    reversal :math:`E(t) \to E^*(-t)` maps the trace to ``I(omega, -tau)``. That
-    differs from ``I(omega, tau)`` unless the pulse is its own time reverse (e.g. a
-    chirp-free, symmetric pulse), so a chirped pulse and its opposite-chirp mirror
-    give distinguishable traces and THG FROG fixes the direction of time
-    (:attr:`time_reversal_ambiguous` is False).
+    reversal :math:`E(t) \to E^*(-t)` maps the trace to ``I(omega, -tau)``, which
+    in general differs from ``I(omega, tau)``, so THG FROG fixes the direction of
+    time (:attr:`time_reversal_ambiguous` is False). The exception is a pulse whose
+    THG trace happens to be delay-symmetric: one that is its own time reverse, or
+    a linearly chirped Gaussian, whose +GDD and -GDD (time-reversed) versions give
+    identical THG traces. Any TOD or asymmetric intensity breaks that symmetry.
 
     Examples
     --------

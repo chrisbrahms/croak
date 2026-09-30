@@ -1112,7 +1112,7 @@ class StageRetrieve(Stage):
                 * 1e15
             )
         except ValueError:
-            # SHG has no three-arm form; leave the displayed width alone.
+            # SHG/THG have no three-arm form; leave the displayed width alone.
             return
         p.smear_sigma_delay_fs = sigma_fs
         self.smear_sigma_spin.blockSignals(True)
@@ -1683,14 +1683,14 @@ class StageRetrieve(Stage):
         """The modelled smearing delay width (fs) at ``smear_scale``, or ``None``.
 
         ``None`` when there is no kernel to measure — smearing switched off, or an
-        SHG trace, which has no three-arm form and so no smearing model at all — so
+        SHG/THG trace, which has no three-arm form and so no smearing model at all — so
         callers can fall back to reporting the bare multiplier or nothing. Shared by
         the status line and the read-out so the two cannot drift apart.
         """
         try:
             kernel = smearing_kernel(self.state.retrieve, td)
         except ValueError:
-            # SHG: square_boxcars_kernel refuses, and rightly so.
+            # SHG/THG: square_boxcars_kernel refuses, and rightly so.
             return None
         if kernel is None:
             return None

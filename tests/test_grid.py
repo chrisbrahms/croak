@@ -6,6 +6,7 @@ import pytest
 from croak.constants import C
 from croak.grid import (
     Grid,
+    HarmonicBandError,
     fundamental_band,
     gridparams_lambda,
     gridparams_omega,
@@ -111,3 +112,17 @@ def test_fundamental_band_is_identity_at_the_fundamental():
 def test_fundamental_band_rejects_bad_input(lo, hi, order, match):
     with pytest.raises(ValueError, match=match):
         fundamental_band(lo, hi, order)
+
+
+def test_fundamental_band_too_broad_boundary():
+    """Raises exactly when the full span reaches 2 * centre / order."""
+    order, centre = 3.0, 6.0e15
+    for fraction, raises in ((0.99, False), (1.01, True)):
+        span = fraction * 2.0 * centre / order
+        lo_w, hi_w = centre - span / 2, centre + span / 2
+        args = (2 * np.pi * C / hi_w, 2 * np.pi * C / lo_w, order)
+        if raises:
+            with pytest.raises(HarmonicBandError):
+                fundamental_band(*args)
+        else:
+            assert fundamental_band(*args)[0] > 0
