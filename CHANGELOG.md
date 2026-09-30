@@ -8,6 +8,23 @@ semantic versioning.
 
 ### Fixed
 
+- **Harmonic traces drew their residual and frequency marginal off the signal
+  axis.** The residual and frequency-marginal panels of `plot_retrieval` placed
+  the trace on the fundamental carrier, so for SHG (and THG) they sat at the
+  wrong absolute frequency, away from the measured/retrieved trace panels. Both
+  now use the signal carrier (`omega0 × omega0_scale`).
+- **No marginal prediction for synthetic or simulated harmonic traces.** The
+  marginal-check stage seeded its trust region from the trace band alone. For a
+  harmonic geometry that excludes the fundamental spectrum, which it then
+  blanked, so the stage drew no prediction for SHG. It now spans the trace and
+  the independent spectrum.
+- **`predicted_marginal` treated any unrecognised geometry as SD.** A geometry
+  without a marginal model now raises a `ValueError`.
+- **The SD soft-centroid condition was overstated.** The docs said the SD
+  centroid anchor holds for any temporally symmetric intensity. It needs the
+  instantaneous frequency to be odd about a symmetric intensity; a cubic temporal
+  phase breaks it.
+
 - **Back at Stage 1 could silently lose the session.** Pressing Back once too
   often (or Main menu) reached the welcome menu, whose every entry starts a new
   session, so going forward again found the loaded trace and retrieval gone. The
@@ -32,6 +49,24 @@ semantic versioning.
   recorded through rather than the 0.5 mm one.
 
 ### Added
+
+- **THG-FROG** (`croak.THG`, `interaction="thg"`): third-harmonic generation,
+  $s = E^2 G$, with the signal near $3\omega_0$ (`omega0_scale = 3`).
+  - **Solvers:** it has a hand-derived Wirtinger adjoint and JAX signal/adjoint
+    twins, so every solver supports it in a thin medium. Dispersive propagation
+    and geometric smearing raise, as for SHG.
+  - **Marginal checks:** `predicted_marginal`/`predicted_centroid` give
+    SD-style soft anchors, $|\widehat{E^2}|^2 * S$ centred near $3\bar\omega_S$
+    with a rigorous $\sigma_S$ lower bound.
+  - **GUI:** THG is offered by the load and synthetic stages, and the whole
+    pipeline, including regridding onto the tripled carrier, works with it.
+  - **Direction of time:** THG fixes it in general, but a linearly chirped
+    Gaussian gives a delay-symmetric trace, so its GDD sign is undetermined.
+    This is documented and tested.
+  - **Documentation:** the interactions, gradients and marginals pages cover
+    THG. The grids how-to explains how to size the retrieval band from a
+    harmonic trace. A new tutorial is at `docs/tutorials/06_thg_frog.md`.
+  - **Example:** `examples/example_retrieval.py` includes THG.
 
 - **"Reverse delay axis" on the measured loader** (`LoadParams.reverse_trace`;
   GUI Load stage, "Units & interaction"). The simulated loader already had it;
