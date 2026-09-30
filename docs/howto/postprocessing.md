@@ -202,7 +202,7 @@ Two independent controls, because the panels use two different abscissae:
   and residual panels.
 
 They are separate because the trace sits at the *signal* frequency, which for SHG
-is twice the pulse's. `flim` matters when the retrieval grid is much wider than
+is twice the pulse's and for THG three times. `flim` matters when the retrieval grid is much wider than
 the signal, which is typical when retrieving directly on a synthesis grid rather
 than one cropped by {func}`~croak.preprocess.load_and_clean`; without it the trace
 is a thin stripe across a mostly empty axis:

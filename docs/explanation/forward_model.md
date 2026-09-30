@@ -95,7 +95,7 @@ trace = croak.maketrace(g.omega, delays, ew, "pg",
 ```
 
 Remember that dispersive propagation is supported for **PG** and **SD** only
-(their signal stays at the fundamental); SHG raises a `ValueError`. See
+(their signal stays at the fundamental); SHG and THG raise a `ValueError`. See
 [Interactions](interactions.md).
 
 ## Quadrature convergence

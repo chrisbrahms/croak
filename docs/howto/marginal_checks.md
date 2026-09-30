@@ -96,7 +96,9 @@ corrected = trace * croak.preprocess.third_order_scale(lam, n)[:, None]
 ```
 
 This is the physically grounded replacement for matching the marginal *shape* to
-the spectrum.
+the spectrum. It is only as good as the centroid anchor, though. That anchor is
+hard for PG/TG and SHG but soft for SD and THG, where an automatic exponent will
+also absorb any phase-induced centroid shift as a spurious tilt.
 
 ## In the GUI
 

@@ -40,12 +40,13 @@ through the dispersive model. See [Conventions](../reference/conventions.md).
 ## Signal operators for FROG geometries
 
 The signal operator is built from a *test* field $E$ (undelayed) and a *gate*
-field $G(t) = E(t-\tau)$ (delayed). croak implements three standard geometries,
+field $G(t) = E(t-\tau)$ (delayed). croak implements four standard geometries,
 each a different instantaneous nonlinearity in the time domain:
 
 | Geometry | Signal $s(t)$ | croak name | Trace carrier |
 |----------|---------------|-----------|---------------|
 | Second-harmonic generation | $E\,G$ | `"shg"` | $2\omega_0$ |
+| Third-harmonic generation | $E^2\,G$ | `"thg"` | $3\omega_0$ |
 | Self-diffraction | $E^2\,G^*$ | `"sd"` | $\omega_0$ |
 | Polarisation gating | $E\,\lvert G\rvert^2$ | `"pg"` | $\omega_0$ |
 
@@ -92,11 +93,13 @@ carries *trivial ambiguities* that retrieval cannot resolve from the trace alone
 - for SHG-FROG, the **direction of time** ($E(t) \to E^*(-t)$).
 
 croak's results inherit these: compare retrieved pulses up to a constant phase and
-a time shift. Some geometries (SD, PG, TG, THG) break the time-reversal
-ambiguity. *Non-trivial* ambiguities (genuinely distinct pulses with the same
-trace) are rare for well-sampled traces — one notable exception is THG-FROG,
-whose trace cannot tell the sign of a pure linear chirp on a Gaussian pulse (see
-[Interactions](interactions.md#thg-frog)) — and are the reason retrieval is run from several
+a time shift. The other geometries (SD, PG, TG, THG) break the time-reversal
+ambiguity. THG does so only in general: a linearly chirped Gaussian and its time
+reverse (the same pulse with opposite GDD) give identical THG traces, so for
+such pulses the direction of time survives there too (see
+[Interactions](interactions.md#thg-frog)). *Non-trivial* ambiguities (genuinely
+distinct pulses with the same trace) are rare for well-sampled traces and are
+the reason retrieval is run from several
 [random restarts](../howto/solver_selection.md).
 
 ## Beyond FROG
@@ -105,8 +108,7 @@ Because the only geometry-specific ingredient is the signal operator
 $S_\delta$, the framework extends to any parameterised nonlinear process — d-scan
 (where $\delta$ is inserted glass), TDP (where $\delta$ is a ptychographic
 position), and others — by swapping the operator while reusing the same
-least-squares machinery. croak currently ships four FROG kernels: the three above
-and third-harmonic generation ([Interactions](interactions.md)).
+least-squares machinery. croak currently ships the four FROG kernels above.
 
 ## Further reading
 

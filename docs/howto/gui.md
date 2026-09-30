@@ -108,7 +108,7 @@ and hand the trace straight to the marginal-check stage.
    updates the other), and a **Spectrum (independent)** group generates a
    fundamental spectrum that is passed downstream (range / step / # points); by
    default it **mirrors the FROG-trace λ window**, scaled to the fundamental
-   (×2 for SHG). With it present, the marginal-check overlay and the SHG marginal
+   (×2 for SHG, ×3 for THG). With it present, the marginal-check overlay and the SHG marginal
    correction work on synthetic traces too. The known pulse (its temporal
    intensity envelope `It`) is carried through and shown beneath the retrieved
    pulse, and saved with the result.
@@ -141,11 +141,13 @@ and hand the trace straight to the marginal-check stage.
    cannot wash the image out.
 5. **Marginal check** — compare the trace's frequency marginal with the marginal
    **predicted** from the independent spectrum ({mod}`croak.marginal_checks`):
-   exact for SHG (the spectral autoconvolution), transform-limited for PG/TG/SD.
+   exact for SHG (the spectral autoconvolution), transform-limited for
+   PG/TG/SD/THG.
    It overlays the predicted marginal, marks the predicted vs measured **centroid**,
    reports the **width-bracket** check, and exposes the spectral **trust region**
-   (defaults to 190–1000 nm for a measured trace, or the full loaded range for
-   the noise-free simulated/synthetic traces), a **frequency/wavelength** axis
+   (defaults to 190–1000 nm for a measured trace, or the full loaded range —
+   trace and independent spectrum, which sit in different bands for SHG/THG —
+   for the noise-free simulated/synthetic traces), a **frequency/wavelength** axis
    toggle (default frequency — the physically correct space; the wavelength view
    applies the λ Jacobian, which blue-shifts a broad marginal), a **log/linear**
    marginal toggle (default linear,

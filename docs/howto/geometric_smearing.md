@@ -218,7 +218,8 @@ a single signal field, which breaks COPRA's magnitude-replacement projection, an
 the hand-written adjoints are not extended to it. Asking for smearing with one of
 them raises — it is never dropped silently.
 
-SHG raises too: geometric smearing here is defined for the three-arm PG/SD forms.
+SHG and THG raise too: geometric smearing here is defined for the three-arm PG/SD
+forms.
 
 ## In the GUI
 

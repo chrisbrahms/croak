@@ -206,6 +206,10 @@ and the checks carry over from SD:
 
 - **TL predicted marginal** — $|\widehat{E_\mathrm{TL}^2}|^2 * S$. For a Gaussian
   spectrum it has RMS width exactly $\sqrt3\,\sigma_S$. It is a soft check.
+  {func}`~croak.marginal_checks.predicted_marginal` places this shape on the
+  analytic $3\bar\omega_S$, as it places SD's on $\bar\omega_S$. For a
+  transform-limited pulse with an *asymmetric* spectrum, the true TL marginal
+  centroid differs from that by a few per cent of $\sigma_S$.
 - **Centroid — soft.**
   $\bar\omega[M_\mathrm{THG}] = \bar\omega[\,|\widehat{E^2}|^2\,] + \bar\omega_S$,
   which equals $3\bar\omega_S$ under exactly SD's condition: the instantaneous
@@ -252,8 +256,11 @@ before trusting a retrieved chirp.
 
 A TG/PG detector's third-order generation/collection efficiency tilts the
 marginal by a power law $(\lambda/\mu\mathrm{m})^n$
-({func}`croak.preprocess.third_order_scale`). Because the marginal centroid is a
-**hard** anchor for PG/TG (and the harmonic anchor for SD/SHG/THG),
+({func}`croak.preprocess.third_order_scale`). The marginal centroid is a
+**hard** anchor for PG/TG and SHG, but only a soft TL/symmetric anchor for SD
+and THG, so on those geometries an automatic exponent also absorbs any
+phase-induced centroid shift (such as the ~2 nm TOD shift in the
+[THG tutorial](../tutorials/06_thg_frog.md)) as a spurious efficiency tilt.
 {func}`croak.marginal_checks.auto_third_order_exponent` picks the exponent $n$
 whose corrected-marginal centroid lands on the predicted centroid. The tilt
 shifts the centroid monotonically in $n$, so the match is a unique root; it is

@@ -64,10 +64,16 @@ $3\omega_0$ puts the trace on its absolute wavelength axis:
 
 ```{code-cell} ipython3
 scale = croak.get_interaction("thg").omega0_scale
-lam_signal = wlfreq(g.omega + scale * omega0)
+omega_signal = g.omega + scale * omega0
+# The wide synthesis grid reaches below zero absolute frequency; keep the
+# physical rows and sort them so the wavelength axis is monotonic.
+physical = omega_signal > 0
+lam_signal = wlfreq(omega_signal[physical])
+order = np.argsort(lam_signal)
 
 fig, ax = plt.subplots(figsize=(5.5, 4))
-ax.pcolormesh(delays / 1e-15, lam_signal / 1e-9, trace, shading="auto")
+ax.pcolormesh(delays / 1e-15, lam_signal[order] / 1e-9, trace[physical][order],
+              shading="auto")
 ax.set_ylim(235, 305)
 ax.set_xlabel("delay (fs)")
 ax.set_ylabel("signal wavelength (nm)")

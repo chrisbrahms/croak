@@ -63,10 +63,10 @@ depth-integral slab**, which croak supports for the **PG and SD** interactions.
 There the nonlinear interaction happens throughout the slab (a depth quadrature),
 so $L$ changes the *shape* of the trace, not merely a spectral phase.
 
-For **SHG** a slab reduces to a pure spectral phase on the input pulse, which a
-freely retrieved phase absorbs completely — fitting $L$ would be a flat direction
-that does nothing, so it is **rejected with an error**. (This is the same reason
-croak forbids dispersive SHG propagation in the first place.)
+For the harmonic geometries (**SHG**, **THG**) the slab model is not available at
+all: croak forbids dispersive propagation for them, because $\beta(\omega)$ is
+built at the fundamental while their signal is not, so fitting $L$ is **rejected
+with an error**.
 
 Even within PG/SD, the *bulk-chirp* part of $L$ is partly degenerate with the
 retrieved phase; only the depth-distributed part constrains it. Thickness is
