@@ -146,6 +146,7 @@ tutorials/02_choosing_an_algorithm
 tutorials/03_dispersive_retrieval
 tutorials/04_experimental_workflow
 tutorials/05_dispersion_tuning
+tutorials/06_thg_frog
 ```
 
 ```{toctree}

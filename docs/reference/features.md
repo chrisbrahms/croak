@@ -67,7 +67,8 @@ Further reading: [Gradients](../explanation/gradients.md).
 
 - **Interactions** — SHG, THG, SD and PG (the transient-grating/TG-FROG kernel), each
   with a closed-form adjoint, extensible by subclassing
-  {class}`~croak.interactions.Interaction`.
+  {class}`~croak.interactions.Interaction`. THG-FROG has its own
+  [tutorial](../tutorials/06_thg_frog.md).
 - **Dispersive propagation** — a Gauss–Legendre depth integral through a material
   slab, propagating both the input replicas and the generated signal. Available
   on every solver, for PG and SD (the SHG and THG signals are not at the
