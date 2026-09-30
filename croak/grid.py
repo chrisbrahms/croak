@@ -21,7 +21,7 @@ All FFTs are computed with :mod:`scipy.fft`.
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Literal, cast
 
 import numpy as np
 import scipy.fft
@@ -203,7 +203,11 @@ class HarmonicBandError(ValueError):
 
 
 def fundamental_band(
-    lambda_min: float, lambda_max: float, omega0_scale: float
+    lambda_min: float,
+    lambda_max: float,
+    omega0_scale: float,
+    *,
+    on_too_broad: Literal["raise", "scale"] = "raise",
 ) -> tuple[float, float]:
     r"""Return the fundamental wavelength band whose grid holds a harmonic trace.
 
@@ -231,7 +235,14 @@ def fundamental_band(
         Harmonic order of the signal carrier
         (:attr:`croak.interactions.Interaction.omega0_scale`): 2 for SHG, 3 for
         THG, 1 for PG/SD (for which the band is returned unchanged). Must be
-        positive.
+        positive and finite.
+    on_too_broad : {"raise", "scale"}, optional
+        What to do when the window is too broad to be a harmonic trace (see
+        Raises). ``"raise"`` (default) raises :class:`HarmonicBandError`.
+        ``"scale"`` returns the wavelengths multiplied by ``omega0_scale``
+        instead. That is the right fallback when the window is an instrument's
+        range rather than the trace's extent (e.g. a spectrometer spanning the
+        fundamental, loaded as SHG), where no exact mapping exists.
 
     Returns
     -------
@@ -246,7 +257,7 @@ def fundamental_band(
         frequency span is at least twice its centre frequency divided by
         ``omega0_scale``, which would put the band's lower edge at or below zero
         frequency. The last case raises :class:`HarmonicBandError`, a
-        :class:`ValueError` subclass callers can handle on its own.
+        :class:`ValueError` subclass, unless ``on_too_broad="scale"``.
 
     Examples
     --------
@@ -256,12 +267,20 @@ def fundamental_band(
     >>> fundamental_band(700e-9, 900e-9, 1.0) == (700e-9, 900e-9)
     True
     """
-    if not 0.0 < lambda_min < lambda_max:
+    if on_too_broad not in ("raise", "scale"):
+        raise ValueError(
+            f"on_too_broad must be 'raise' or 'scale', got {on_too_broad!r}"
+        )
+    if not (np.isfinite(lambda_min) and np.isfinite(lambda_max)) or not (
+        0.0 < lambda_min < lambda_max
+    ):
         raise ValueError(
             f"need 0 < lambda_min < lambda_max, got {lambda_min!r}, {lambda_max!r}"
         )
-    if omega0_scale <= 0.0:
-        raise ValueError(f"omega0_scale must be positive, got {omega0_scale!r}")
+    if not (np.isfinite(omega0_scale) and omega0_scale > 0.0):
+        raise ValueError(
+            f"omega0_scale must be positive and finite, got {omega0_scale!r}"
+        )
     if omega0_scale == 1.0:
         return lambda_min, lambda_max
     omega_a = 2.0 * np.pi * C / lambda_max  # lowest trace frequency
@@ -269,6 +288,8 @@ def fundamental_band(
     omega0 = 0.5 * (omega_a + omega_b) / omega0_scale
     half_span = 0.5 * (omega_b - omega_a)
     if half_span >= omega0:
+        if on_too_broad == "scale":
+            return lambda_min * omega0_scale, lambda_max * omega0_scale
         raise HarmonicBandError(
             "the trace is too broad for a fundamental band at this harmonic order: "
             "its lower edge would reach zero frequency"

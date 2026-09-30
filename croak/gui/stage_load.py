@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .. import io
-from ..grid import HarmonicBandError, fundamental_band
+from ..grid import fundamental_band
 from ..interactions import INTERACTIONS, get_interaction
 from ..plotting import cmap_white, signed_pcolormesh
 from ..session.pipeline import assemble_load_data
@@ -114,14 +114,13 @@ def compute_preproc_defaults(data) -> PreprocParams:
     # than the fundamental, see croak.grid.fundamental_band). Bounds stay generous
     # so the user can widen the grid if needed.
     scale = get_interaction(data["interaction"]).omega0_scale
-    try:
-        band_lo, band_hi = fundamental_band(lmin * 1e-9, lmax * 1e-9, scale)
-    except HarmonicBandError:
-        # The file's wavelength extent (the spectrometer range, not the signal
-        # band) is too broad to be any harmonic trace — e.g. a fundamental-range
-        # file loaded as SHG. A default must still exist, so fall back to the
-        # plain scaled extent; the user sizes the band in the preprocess stage.
-        band_lo, band_hi = lmin * 1e-9 * scale, lmax * 1e-9 * scale
+    # The file's wavelength extent is the spectrometer range, which can be too
+    # broad to be any harmonic trace (e.g. a fundamental-range file loaded as
+    # SHG). A default must still exist, so fall back to the plain scaled extent
+    # there; the user sizes the band in the preprocess stage.
+    band_lo, band_hi = fundamental_band(
+        lmin * 1e-9, lmax * 1e-9, scale, on_too_broad="scale"
+    )
     pp.lam_min_nm = float(np.floor(band_lo / 1e-9))
     pp.lam_max_nm = float(np.ceil(band_hi / 1e-9))
     pp.lam_bound_min_nm = max(50.0, 0.5 * pp.lam_min_nm)

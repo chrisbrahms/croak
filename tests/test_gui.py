@@ -23,6 +23,7 @@ pytest.importorskip("PyQt6")
 from PyQt6.QtCore import QSettings, QSize, Qt
 from PyQt6.QtWidgets import QComboBox
 
+from croak.grid import fundamental_band
 from croak.gui import settings
 from croak.gui.base import CONTROLS_MIN_WIDTH
 from croak.gui.canvas import MplCanvas, collapsible
@@ -107,7 +108,7 @@ def test_synthetic_generation_routes_to_marginal_check(qtbot):
 
 
 def test_synthetic_generates_independent_spectrum_and_steps(qtbot):
-    """Synthetic SHG traces carry a mirrored ×2 fundamental spectrum; steps link."""
+    """Synthetic SHG traces carry a mirrored fundamental spectrum; steps link."""
     w = Wizard()
     qtbot.addWidget(w)
     w.show_synthetic()
@@ -115,14 +116,16 @@ def test_synthetic_generates_independent_spectrum_and_steps(qtbot):
     # step <-> count interlock at fixed range
     s._on_delay_step(2.0)  # 120 fs span / 2 fs -> 61 delays
     assert s.ndelay.value() == 61
-    # mirror: SHG fundamental window is 2x the (300-550 nm) signal window
-    assert s._spec_wl == pytest.approx((600.0, 1100.0))
+    # mirror: the SHG fundamental window spans the (300-550 nm) signal window's
+    # frequency span around the fundamental carrier (fundamental_band)
+    expected = tuple(x / 1e-9 for x in fundamental_band(300e-9, 550e-9, 2.0))
+    assert s._spec_wl == pytest.approx(expected)
     assert s.nspec.value() == s.nwl.value()
     s.advance()
     data = w.state.load_data
     assert data["lam_spec"] is not None and data["Ilam_spec"] is not None
-    assert data["lam_spec"].min() / 1e-9 == pytest.approx(600.0, abs=1.0)
-    assert data["lam_spec"].max() / 1e-9 == pytest.approx(1100.0, abs=1.0)
+    assert data["lam_spec"].min() / 1e-9 == pytest.approx(expected[0], abs=1.0)
+    assert data["lam_spec"].max() / 1e-9 == pytest.approx(expected[1], abs=1.0)
     # the known-truth intensity FWHM matches the requested 10 fs duration
     assert w.state.truth.fwhm / 1e-15 == pytest.approx(10.0, rel=2e-2)
 
@@ -156,7 +159,7 @@ def test_synthetic_harmonic_trace_gets_a_marginal_prediction(
 
 
 def test_synthetic_thg_trace_mirrors_a_tripled_spectrum_and_predicts(qtbot):
-    """A synthetic THG trace sits near λ0/3; its spectrum window mirrors ×3."""
+    """A synthetic THG trace sits near λ0/3; its spectrum window follows it."""
     w = Wizard()
     qtbot.addWidget(w)
     w.show_synthetic()
@@ -165,7 +168,8 @@ def test_synthetic_thg_trace_mirrors_a_tripled_spectrum_and_predicts(qtbot):
     # the 800 nm default pulse gives a THG signal near 267 nm
     s.wl_range.set_values(200.0, 340.0)
     s._on_wl(200.0, 340.0)
-    assert s._spec_wl == pytest.approx((600.0, 1020.0))
+    expected = tuple(x / 1e-9 for x in fundamental_band(200e-9, 340e-9, 3.0))
+    assert s._spec_wl == pytest.approx(expected)
     s.advance()
     data = w.state.load_data
     assert data["interaction"] == "thg"
@@ -203,6 +207,38 @@ def test_preproc_defaults_seed_the_fundamental_band(lam_nm, interaction, expecte
     }
     pp = compute_preproc_defaults(data)
     assert (pp.lam_min_nm, pp.lam_max_nm) == pytest.approx(expected_nm, abs=1.0)
+
+
+@pytest.mark.parametrize(("interaction", "order"), [("thg", 3.0), ("pg", 1.0)])
+def test_synthetic_window_follows_the_signal_carrier(qtbot, interaction, order):
+    """Switching interaction re-centres a trace window that lost the signal.
+
+    The default window (300-550 nm) suits the 800 nm pulse's SHG; for THG
+    (~267 nm) or PG (800 nm) it would crop or miss the trace entirely.
+    """
+    w = Wizard()
+    qtbot.addWidget(w)
+    w.show_synthetic()
+    s = w.synthetic
+    s.interaction.setCurrentText(interaction)
+    lam_signal = 800.0 / order
+    lo, hi = s._wl
+    assert lo < lam_signal < hi
+    s.advance()
+    w.state.stage = 3
+    assert w.state.tracedata.taper_loss < 0.01
+
+
+def test_synthetic_window_kept_when_it_holds_the_signal(qtbot):
+    """A user window that still contains the new signal is left alone."""
+    w = Wizard()
+    qtbot.addWidget(w)
+    w.show_synthetic()
+    s = w.synthetic
+    s.wl_range.set_values(200.0, 500.0)
+    s._on_wl(200.0, 500.0)
+    s.interaction.setCurrentText("thg")  # 267 nm is inside 200-500 nm
+    assert s._wl == pytest.approx((200.0, 500.0))
 
 
 def test_load_stage_offers_every_interaction(qtbot):

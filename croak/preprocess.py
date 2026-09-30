@@ -37,7 +37,7 @@ from scipy.interpolate import CubicSpline, InterpolatedUnivariateSpline
 from scipy.linalg import solveh_banded
 
 from .constants import C
-from .grid import Grid, gridparams_lambda
+from .grid import Grid, fundamental_band, gridparams_lambda
 from .interactions import get_interaction
 from .marginal_checks import apply_marginal_correction
 from .maths import fwhm, planck_taper
@@ -1706,14 +1706,16 @@ def load_and_clean(
     )
 
     if lam_spec is not None and Ilam_spec is not None:
-        # The trace λm window maps to the fundamental-spectrum window by the same
-        # factor as omega0_scale: for SHG λ_fund = 2·λ_trace (scale 2), for THG
-        # λ_fund = 3·λ_trace (scale 3); for sd/pg the trace is already at the
-        # fundamental (scale 1).
-        scale = inter.omega0_scale
-        Ilam_spec_filt = filter_spectrum(
-            lam_spec, Ilam_spec, lamm_lims[0] * scale, lamm_lims[1] * scale
+        # Map the trace λm window onto the fundamental spectrum. For SD/PG it is
+        # the same window; for a harmonic (SHG/THG) the trace is broader than the
+        # fundamental, and fundamental_band keeps the frequency span rather than
+        # dividing wavelengths by the order (which would taper the spectrum's
+        # wings). A λm window too broad for any harmonic band falls back to the
+        # scaled extent.
+        spec_lo, spec_hi = fundamental_band(
+            lamm_lims[0], lamm_lims[1], inter.omega0_scale, on_too_broad="scale"
         )
+        Ilam_spec_filt = filter_spectrum(lam_spec, Ilam_spec, spec_lo, spec_hi)
     else:
         Ilam_spec_filt = None
 

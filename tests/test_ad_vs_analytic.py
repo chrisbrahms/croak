@@ -185,6 +185,7 @@ CASES = [
     ("pg", False, False, 0.0, 0.0, 0.0),
     ("shg", False, False, 0.0, 0.0, 0.0),
     ("sd", False, False, 0.0, 0.0, 0.0),
+    ("thg", False, False, 0.0, 0.0, 0.0),
     ("pg", True, False, 0.0, 0.0, 0.0),
     ("pg", False, True, 0.0, 0.0, 0.0),
     ("pg", False, False, 0.05, 0.02, 0.0),

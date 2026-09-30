@@ -6,7 +6,11 @@ from conftest import make_synthetic_experiment
 
 from croak import preprocess
 from croak.constants import C
+from croak.forward import maketrace
+from croak.grid import Grid, fundamental_band
 from croak.maths import planck_taper, wlfreq
+from croak.preprocess import load_and_clean, omega_to_lambda_density
+from croak.pulses import gaussian_pulse
 from croak.retrieve import retrieve
 
 
@@ -907,3 +911,51 @@ class TestUniformCoreIndices:
         x = np.sort(rng.uniform(-1, 1, 37))
         idx = preprocess.uniform_core_indices(x)
         assert np.all(np.diff(idx) == 1)
+
+
+def _thg_measurement():
+    """A THG trace on a signal-wavelength axis plus its fundamental spectrum."""
+    g = Grid(1024, dt=0.25e-15)
+    omega0 = wlfreq(800e-9)
+    ew = gaussian_pulse(g, 8e-15, phases=[40e-30, 600e-45])
+    delays = np.linspace(-80e-15, 80e-15, 81)
+    trace = maketrace(g.omega, delays, ew, "thg")
+    omega_sig = g.omega + 3.0 * omega0
+    keep = omega_sig > 0
+    lam = wlfreq(omega_sig[keep])
+    order = np.argsort(lam)
+    lam = lam[order]
+    meas = omega_to_lambda_density(trace[keep][order], lam)
+    band = (lam > 200e-9) & (lam < 360e-9)
+    omega_f = g.omega + omega0
+    keep_f = omega_f > 0
+    lam_spec = wlfreq(omega_f[keep_f])
+    order_f = np.argsort(lam_spec)
+    lam_spec = lam_spec[order_f]
+    Ilam_spec = omega_to_lambda_density((np.abs(ew) ** 2)[keep_f][order_f], lam_spec)
+    band_f = (lam_spec > 500e-9) & (lam_spec < 1400e-9)
+    return lam[band], meas[band], delays, lam_spec[band_f], Ilam_spec[band_f]
+
+
+def test_harmonic_spectrum_window_keeps_the_fundamental_wings():
+    """Regression: a tight THG λm window must not taper the fundamental spectrum.
+
+    λm is mapped onto the fundamental with fundamental_band (same frequency span);
+    the old λ × 3 mapping gave ~700-930 nm here and tapered the wings of the
+    ~650-1000 nm spectrum.
+    """
+    lam, meas, delays, lam_spec, Ilam_spec = _thg_measurement()
+    marg = meas.sum(axis=1)
+    edge = np.where(marg > 1e-4 * marg.max())[0]
+    lamm = (float(lam[edge[0]]), float(lam[edge[-1]]))
+    lam_min, lam_max = fundamental_band(*lamm, 3.0)
+    kwargs = dict(
+        lam_min=lam_min,
+        lam_max=lam_max,
+        input_unit="delay",
+        lam_spec=lam_spec,
+        Ilam_spec=Ilam_spec,
+    )
+    tight = load_and_clean(meas, lam, delays, "thg", lamm_lims=lamm, **kwargs)
+    full = load_and_clean(meas, lam, delays, "thg", **kwargs)
+    np.testing.assert_allclose(tight.Iomega, full.Iomega, atol=1e-4 * full.Iomega.max())

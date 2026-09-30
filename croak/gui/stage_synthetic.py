@@ -22,7 +22,7 @@ from PyQt6.QtCore import QTimer
 from .. import dispersion
 from ..constants import C
 from ..forward import maketrace
-from ..grid import Grid
+from ..grid import Grid, fundamental_band
 from ..interactions import INTERACTIONS, get_interaction
 from ..materials import MATERIALS
 from ..processing import TruthPulse
@@ -130,8 +130,8 @@ class StageSynthetic(Stage):
             "Mirror FROG trace λ window", True, self._on_spec_mirror
         )
         form.addRow(self.spec_mirror)
-        # fundamental-spectrum λ window (nm); mirrors the trace window scaled to
-        # the fundamental (×2 for SHG, ×3 for THG) until the user unmirrors it.
+        # fundamental-spectrum λ window (nm); mirrors the trace window mapped to
+        # the fundamental (fundamental_band) until the user unmirrors it.
         self._spec_wl = (700.0, 900.0)
         self.spec_range = RangeControl(
             100.0, 4000.0, *self._spec_wl, decimals=0, step=10.0
@@ -233,11 +233,47 @@ class StageSynthetic(Stage):
                 ),
             )
 
-    def _on_interaction(self, _value):
-        # the SHG (THG) fundamental sits at 2× (3×) the signal wavelength, so a mirrored
+    def _on_interaction(self, value):
+        # The signal carrier moves with the interaction (λ0/2 for SHG, λ0/3 for
+        # THG, λ0 for PG/SD), so the trace window follows it, and a mirrored
         # spectrum window must follow the interaction's omega0 scaling.
+        self._recentre_trace_window(value)
         self._sync_spec_mirror()
         self._changed()
+
+    def _recentre_trace_window(self, interaction: str) -> None:
+        """Move the trace λ window onto the signal carrier if it has lost it.
+
+        A window that already contains the signal wavelength is the user's
+        choice and is kept. Otherwise it is re-centred, in frequency, on
+        ``omega0_scale × ω0`` of the configured pulse with its frequency span
+        unchanged, and clamped to the control's range. Without this, switching
+        from the default SHG window (300–550 nm) to THG silently crops the
+        ~267 nm signal, and PG/SD leave it empty.
+        """
+        omega_signal = (
+            get_interaction(interaction).omega0_scale
+            * 2
+            * math.pi
+            * C
+            / (self.wl.value() * 1e-9)
+        )
+        lam_signal_nm = 2 * math.pi * C / omega_signal / 1e-9
+        lo, hi = self._wl
+        if lo <= lam_signal_nm <= hi:
+            return
+        half_span = 0.5 * 2 * math.pi * C * (1 / (lo * 1e-9) - 1 / (hi * 1e-9))
+        # keep the lower frequency edge positive for a very broad window
+        half_span = min(half_span, 0.9 * omega_signal)
+        new_lo = 2 * math.pi * C / (omega_signal + half_span) / 1e-9
+        new_hi = 2 * math.pi * C / (omega_signal - half_span) / 1e-9
+        new_lo, new_hi = max(new_lo, 100.0), min(new_hi, 2000.0)  # control range
+        self.wl_range.set_values(new_lo, new_hi)  # signal-safe
+        self._wl = (new_lo, new_hi)
+        self._set_spin(
+            self.wl_step,
+            self._count_to_step(new_hi - new_lo, int(self.nwl.value())),
+        )
 
     def _on_delay(self, lo, hi):
         self._delay = (lo, hi)
@@ -310,14 +346,21 @@ class StageSynthetic(Stage):
     def _sync_spec_mirror(self) -> None:
         """Mirror the trace λ window onto the independent spectrum (when enabled).
 
-        The fundamental spectrum sits at the signal wavelength scaled by the
-        interaction's ``omega0_scale`` (×2 for SHG, ×3 for THG, ×1 for PG/SD),
-        and the point count tracks ``# λ points``.
+        The fundamental spectrum window is the band whose frequency span matches
+        the trace window around the fundamental carrier
+        (:func:`croak.grid.fundamental_band`: roughly ×2 the wavelengths for SHG,
+        ×3 for THG, unchanged for PG/SD), and the point count tracks
+        ``# λ points``.
         """
         if not self.spec_mirror.isChecked():
             return
         scale = get_interaction(self.interaction.currentText()).omega0_scale
-        lo, hi = self._wl[0] * scale, self._wl[1] * scale
+        # the fundamental band whose frequency span matches the trace window (not
+        # the window's wavelengths times the order, which would crop the wings)
+        lo_m, hi_m = fundamental_band(
+            self._wl[0] * 1e-9, self._wl[1] * 1e-9, scale, on_too_broad="scale"
+        )
+        lo, hi = lo_m / 1e-9, hi_m / 1e-9
         self._spec_wl = (lo, hi)
         self.spec_range.set_values(lo, hi)  # signal-safe
         self._set_spin(self.nspec, int(self.nwl.value()))

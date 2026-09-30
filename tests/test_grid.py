@@ -105,8 +105,11 @@ def test_fundamental_band_is_identity_at_the_fundamental():
     [
         (900e-9, 700e-9, 2.0, "lambda_min < lambda_max"),
         (-1e-9, 700e-9, 2.0, "lambda_min < lambda_max"),
-        (300e-9, 400e-9, 0.0, "omega0_scale must be positive"),
+        (300e-9, 400e-9, 0.0, "positive and finite"),
         (100e-9, 3000e-9, 3.0, "too broad"),
+        (np.nan, 700e-9, 2.0, "lambda_min < lambda_max"),
+        (300e-9, 400e-9, np.nan, "positive and finite"),
+        (300e-9, 400e-9, np.inf, "positive and finite"),
     ],
 )
 def test_fundamental_band_rejects_bad_input(lo, hi, order, match):
@@ -126,3 +129,25 @@ def test_fundamental_band_too_broad_boundary():
                 fundamental_band(*args)
         else:
             assert fundamental_band(*args)[0] > 0
+
+
+def test_fundamental_band_scale_fallback_for_a_too_broad_window():
+    """on_too_broad="scale" returns the scaled extent instead of raising."""
+    assert fundamental_band(100e-9, 3000e-9, 3.0, on_too_broad="scale") == (
+        pytest.approx(300e-9),
+        pytest.approx(9000e-9),
+    )
+    # a window that fits is mapped exactly either way
+    assert fundamental_band(240e-9, 300e-9, 3.0, on_too_broad="scale") == (
+        fundamental_band(240e-9, 300e-9, 3.0)
+    )
+
+
+def test_fundamental_band_rejects_unknown_fallback():
+    with pytest.raises(ValueError, match="on_too_broad"):
+        fundamental_band(
+            240e-9,
+            300e-9,
+            3.0,
+            on_too_broad="clip",  # pyright: ignore[reportArgumentType] — error path
+        )
