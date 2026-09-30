@@ -177,10 +177,12 @@ How the three PG checks carry over:
   The two averages agree when $\phi'$ is constant. They also agree when $\phi'$
   is **odd about a symmetric intensity profile**, which covers a flat-phase pulse
   with a symmetric spectrum and any linear chirp of one. A symmetric intensity
-  alone is *not* enough: a symmetric pulse with a cubic temporal phase moves the
-  centroid by ~0.7 $\sigma_S$. Even a transform-limited pulse with an asymmetric
+  alone is *not* enough: a Gaussian pulse of RMS duration $\sigma_t$ with the
+  cubic temporal phase $\phi=(t/\sigma_t)^3$ moves the centroid by about
+  $0.67\,\sigma_S$. Even a transform-limited pulse with an asymmetric
   spectrum is off by a few per cent of $\sigma_S$.
-  So treat "centred at the fundamental" as a TL/symmetric anchor, not a hard check
+  So treat "centred at the fundamental" as a soft anchor (exact at TL with a
+  symmetric spectrum, or for an odd instantaneous frequency), not a hard check
   ({attr}`~croak.marginal_checks.MarginalPrediction.centroid_is_hard` is `False`).
 - **Width — messier.** Only the lower bound $\sigma[M_\mathrm{SD}] > \sigma_S$ is
   rigorous; the SHG-spectrum width depends on phase non-monotonically (for a
@@ -229,7 +231,7 @@ before trusting a retrieved chirp.
 | check | SHG | PG / TG | SD | THG |
 |---|---|---|---|---|
 | predicted marginal from $S$ alone | exact | TL only | TL only (or via measured SHG spec) | TL only (or via measured SHG spec) |
-| centroid | $2\bar\omega_S$ (hard) | $\bar\omega_S$ (hard) | $\approx\bar\omega_S$ at TL/symmetric (soft) | $\approx 3\bar\omega_S$ at TL/symmetric (soft) |
+| centroid | $2\bar\omega_S$ (hard) | $\bar\omega_S$ (hard) | $\approx\bar\omega_S$ (soft: TL or odd chirp) | $\approx 3\bar\omega_S$ (soft: TL or odd chirp) |
 | width | $\sqrt2\,\sigma_S$ (hard) | bracket $[\sigma_S,\ \sigma_\mathrm{TL}]$ | $>\sigma_S$; TL estimate (weak) | $>\sigma_S$; TL estimate (weak) |
 | nature of a mismatch | trace error only | trace error or non-TL phase | trace error or phase | trace error or phase |
 
@@ -248,7 +250,10 @@ before trusting a retrieved chirp.
   normalisation to a **spectral trust region** (in the GUI, 190–1000 nm for a
   measured trace, or the full loaded range — trace and independent spectrum — for
   the noise-free simulated/synthetic traces) so out-of-band detector noise cannot
-  dominate.
+  dominate. The same window tapers the independent spectrum before the
+  prediction, so it must cover *both* the trace band and the fundamental's band.
+  For a measured THG trace of a pulse beyond 1 µm, or a broadband trace reaching
+  below 190 nm, widen the default accordingly.
 - For the rigorous SHG and PG-centroid checks, report the numeric discrepancy
   (measured vs predicted) as a QC metric alongside the retrieval error.
 
@@ -257,7 +262,7 @@ before trusting a retrieved chirp.
 A TG/PG detector's third-order generation/collection efficiency tilts the
 marginal by a power law $(\lambda/\mu\mathrm{m})^n$
 ({func}`croak.preprocess.third_order_scale`). The marginal centroid is a
-**hard** anchor for PG/TG and SHG, but only a soft TL/symmetric anchor for SD
+**hard** anchor for PG/TG and SHG, but only a soft anchor for SD
 and THG, so on those geometries an automatic exponent also absorbs any
 phase-induced centroid shift (such as the ~2 nm TOD shift in the
 [THG tutorial](../tutorials/06_thg_frog.md)) as a spurious efficiency tilt.

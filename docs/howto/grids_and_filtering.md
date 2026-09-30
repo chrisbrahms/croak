@@ -119,11 +119,11 @@ shrinks the frequency span by that factor and crops exactly the broad wings
 that make the harmonic trace wider than the fundamental. The GUI seeds its
 preprocess band with {func}`~croak.grid.fundamental_band` for this reason.
 
-For a 10 fs, 800 nm pulse with some GDD and TOD, the THG trace needs a
-fundamental band of roughly **550–1300 nm**. A band cut at 660–990 nm, which
-already covers the whole fundamental spectrum, still loses 6 % of the trace to
-the taper and leaves the retrieval an order of magnitude worse. The
-[THG-FROG tutorial](../tutorials/06_thg_frog.md) walks through this.
+In the [THG-FROG tutorial](../tutorials/06_thg_frog.md), an 800 nm pulse with
+an 8 fs transform limit plus GDD and TOD gives a THG trace spanning about
+240–300 nm. That needs a fundamental band of about **600–1200 nm**. A 700–920 nm
+band, which covers the fundamental spectrum itself, loses a quarter of the trace
+to the taper.
 
 The same span also has to hold the harmonic signal of the *retrieved* field,
 because the forward model forms $E^2G$ on the periodic grid. A fundamental

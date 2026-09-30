@@ -13,7 +13,7 @@ semantic versioning.
   the trace on the fundamental carrier, so for SHG (and THG) they sat at the
   wrong absolute frequency, away from the measured/retrieved trace panels. Both
   now use the signal carrier (`omega0 × omega0_scale`).
-- **No marginal prediction for synthetic or simulated harmonic traces.** The
+- **No marginal prediction for synthetic harmonic traces.** The
   marginal-check stage seeded its trust region from the trace band alone. For a
   harmonic geometry that excludes the fundamental spectrum, which it then
   blanked, so the stage drew no prediction for SHG. It now spans the trace and
@@ -23,6 +23,12 @@ semantic versioning.
   That shrinks the frequency span by the order and tapered away 22 % of a
   synthetic THG trace, and a smaller share of an SHG one. It is now seeded with
   `croak.fundamental_band`.
+- **Harmonic spectrum windows tapered the fundamental's wings.** `load_and_clean`
+  mapped the trace window `lamm_lims` onto the independent spectrum, and the
+  synthetic stage mirrored its trace window, as wavelength × harmonic order. For
+  SHG/THG that is narrower than the fundamental spectrum. Both now use
+  `croak.fundamental_band`, so the mirrored synthetic spectrum window is wider
+  than before.
 - **`predicted_marginal` treated any unrecognised geometry as SD.** A geometry
   without a marginal model now raises a `ValueError`.
 - **The SD soft-centroid condition was overstated.** The docs said the SD
@@ -69,11 +75,15 @@ semantic versioning.
     This is documented and tested.
   - **Band sizing:** `croak.fundamental_band` maps a harmonic trace's wavelength
     extent to the fundamental retrieval band whose grid holds the whole trace.
+    Its `on_too_broad="scale"` option falls back to the scaled extent for
+    instrument-range windows. The too-broad case otherwise raises
+    `croak.HarmonicBandError`.
+  - **Synthetic stage:** switching the interaction re-centres a trace window
+    that no longer contains the signal carrier.
   - **Documentation:** the interactions, gradients and marginals pages cover
     THG. The grids how-to explains how to size the retrieval band from a
     harmonic trace. A new tutorial is at `docs/tutorials/06_thg_frog.md`.
   - **Example:** `examples/example_retrieval.py` includes THG.
-
 - **"Reverse delay axis" on the measured loader** (`LoadParams.reverse_trace`;
   GUI Load stage, "Units & interaction"). The simulated loader already had it;
   a measured scan has the same ambiguity — which end of the stage scan is "gate

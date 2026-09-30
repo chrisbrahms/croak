@@ -96,7 +96,7 @@ croak's results inherit these: compare retrieved pulses up to a constant phase a
 a time shift. The other geometries (SD, PG, TG, THG) break the time-reversal
 ambiguity. THG does so only in general: a linearly chirped Gaussian and its time
 reverse (the same pulse with opposite GDD) give identical THG traces, so for
-such pulses the direction of time survives there too (see
+such pulses the direction-of-time (GDD-sign) ambiguity survives (see
 [Interactions](interactions.md#thg-frog)). *Non-trivial* ambiguities (genuinely
 distinct pulses with the same trace) are rare for well-sampled traces and are
 the reason retrieval is run from several

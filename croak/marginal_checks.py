@@ -24,9 +24,10 @@ geometry:
 - **PG / TG** — marginal :math:`S * |\widehat{|E|^2}|^2` (transform-limited);
   centroid :math:`\bar\omega_S` (exact); width in :math:`[\sigma_S, \sigma_{TL}]`.
 - **SD** — marginal :math:`|\widehat{E^2}|^2 * S(-\omega)` (transform-limited);
-  centroid :math:`\approx\bar\omega_S` (TL/symmetric only); width :math:`>\sigma_S`.
+  centroid :math:`\approx\bar\omega_S` (soft: TL or odd chirp); width
+  :math:`>\sigma_S`.
 - **THG** — marginal :math:`|\widehat{E^2}|^2 * S` (transform-limited); centroid
-  :math:`\approx 3\bar\omega_S` (TL/symmetric only); width :math:`>\sigma_S`.
+  :math:`\approx 3\bar\omega_S` (soft: TL or odd chirp); width :math:`>\sigma_S`.
 
 SHG is the gold standard: its marginal is fully phase-independent, so any
 mismatch is unambiguously a *trace* problem (calibration, spectral response,
@@ -292,7 +293,8 @@ class MarginalPrediction:
         (``upper`` is ``None``). ``None`` for SHG (the width is exact).
     centroid_is_hard : bool
         Whether the centroid is a rigorous, phase-independent check (SHG, PG/TG)
-        or a soft TL/symmetric anchor (SD, THG).
+        or a soft anchor, exact only at TL or for an instantaneous frequency odd
+        about a symmetric intensity (SD, THG).
     width_is_hard : bool
         Whether the RMS width is an exact check (SHG only).
     sigma_spectrum : float
