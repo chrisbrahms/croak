@@ -21,6 +21,7 @@ import croak
 pytest.importorskip("PyQt6")
 
 from PyQt6.QtCore import QSettings, QSize, Qt
+from PyQt6.QtWidgets import QComboBox
 
 from croak.gui import settings
 from croak.gui.base import CONTROLS_MIN_WIDTH
@@ -29,6 +30,7 @@ from croak.gui.stage_load import assemble_load_data, seed_preproc_defaults
 from croak.gui.stage_marginal_check import StageMarginalCheck
 from croak.gui.state import WizardState
 from croak.gui.wizard import Wizard
+from croak.interactions import INTERACTIONS
 from croak.uncertainty import UncertaintyResult
 
 
@@ -123,6 +125,68 @@ def test_synthetic_generates_independent_spectrum_and_steps(qtbot):
     assert data["lam_spec"].max() / 1e-9 == pytest.approx(1100.0, abs=1.0)
     # the known-truth intensity FWHM matches the requested 10 fs duration
     assert w.state.truth.fwhm / 1e-15 == pytest.approx(10.0, rel=2e-2)
+
+
+@pytest.mark.parametrize(
+    ("interaction", "window"), [("shg", None), ("thg", (200, 340))]
+)
+def test_synthetic_harmonic_trace_gets_a_marginal_prediction(
+    qtbot, interaction, window
+):
+    """Regression: the synthetic trust region spans the fundamental spectrum too.
+
+    A harmonic trace (λ0/2, λ0/3) and its fundamental spectrum occupy disjoint
+    bands; a trust window seeded from the trace band alone blanked the spectrum,
+    so the marginal-check stage drew no prediction.
+    """
+    w = Wizard()
+    qtbot.addWidget(w)
+    w.show_synthetic()
+    s = w.synthetic
+    s.interaction.setCurrentText(interaction)
+    if window is not None:
+        s.wl_range.set_values(*window)
+        s._on_wl(*window)
+    s.advance()
+    data = w.state.load_data
+    mc = w.stages[1]
+    lo, hi = mc._trust_nm
+    assert lo <= data["lam_spec"].min() / 1e-9 and hi >= data["lam_spec"].max() / 1e-9
+    assert mc._predict(data["lam_spec"], data["Ilam_spec"], interaction) is not None
+
+
+def test_synthetic_thg_trace_mirrors_a_tripled_spectrum_and_predicts(qtbot):
+    """A synthetic THG trace sits near λ0/3; its spectrum window mirrors ×3."""
+    w = Wizard()
+    qtbot.addWidget(w)
+    w.show_synthetic()
+    s = w.synthetic
+    s.interaction.setCurrentText("thg")
+    # the 800 nm default pulse gives a THG signal near 267 nm
+    s.wl_range.set_values(200.0, 340.0)
+    s._on_wl(200.0, 340.0)
+    assert s._spec_wl == pytest.approx((600.0, 1020.0))
+    s.advance()
+    data = w.state.load_data
+    assert data["interaction"] == "thg"
+    # the signal-domain trace peaks near a third of the 800 nm fundamental
+    marginal = data["trace"].sum(axis=1)
+    peak_nm = data["lam"][int(np.argmax(marginal))] / 1e-9
+    assert peak_nm == pytest.approx(800.0 / 3.0, abs=5.0)
+    pred = w.stages[1]._predict(data["lam_spec"], data["Ilam_spec"], "thg")
+    assert pred is not None
+    assert pred["centroid_nm"] == pytest.approx(800.0 / 3.0, abs=5.0)
+    w.state.stage = 3  # regrid onto the tripled-carrier window
+    assert w.state.tracedata is not None
+
+
+def test_load_stage_offers_every_interaction(qtbot):
+    """The experimental loader lists the registry, so THG is selectable."""
+    w = Wizard()
+    qtbot.addWidget(w)
+    combos = w.stages[0].findChildren(QComboBox)
+    items = [{c.itemText(i) for i in range(c.count())} for c in combos]
+    assert set(INTERACTIONS) in items
 
 
 def test_marginal_correction_lives_on_marginal_stage(qtbot):

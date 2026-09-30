@@ -63,7 +63,7 @@ class LoadParams:
     #: a wiring convention of the measurement, and a measured file carries no
     #: marker recording it (unlike ``SimulatedLoadParams.reverse_trace``, which
     #: can auto-detect from ``/grid/delay_convention``), so this is a plain
-    #: off-by-default override. It bites on PG/SD, whose kernels fix the
+    #: off-by-default override. It bites on PG/SD/THG, whose kernels fix the
     #: direction of time: getting it wrong there time-reverses the retrieved
     #: pulse and flips the sign of every phase order. An SHG trace is symmetric
     #: in delay (``Interaction.time_reversal_ambiguous``), so reversing it

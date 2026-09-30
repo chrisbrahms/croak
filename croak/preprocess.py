@@ -1707,8 +1707,9 @@ def load_and_clean(
 
     if lam_spec is not None and Ilam_spec is not None:
         # The trace λm window maps to the fundamental-spectrum window by the same
-        # factor as omega0_scale: for SHG λ_fund = 2·λ_trace (scale 2); for
-        # sd/pg the trace is already at the fundamental (scale 1).
+        # factor as omega0_scale: for SHG λ_fund = 2·λ_trace (scale 2), for THG
+        # λ_fund = 3·λ_trace (scale 3); for sd/pg the trace is already at the
+        # fundamental (scale 1).
         scale = inter.omega0_scale
         Ilam_spec_filt = filter_spectrum(
             lam_spec, Ilam_spec, lamm_lims[0] * scale, lamm_lims[1] * scale

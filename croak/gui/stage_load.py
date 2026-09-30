@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .. import io
-from ..interactions import get_interaction
+from ..interactions import INTERACTIONS, get_interaction
 from ..plotting import cmap_white, signed_pcolormesh
 from ..session.pipeline import assemble_load_data
 from .base import Stage
@@ -214,8 +214,8 @@ class StageLoad(Stage):
                     "Flip the delay-sign convention: negate the scan axis, "
                     "mirroring the trace about τ = 0. Tick it when the scan ran "
                     "the other way round (which end is 'gate late' is a wiring "
-                    "convention the file does not record). It matters for PG "
-                    "and SD, which fix the direction of time: a wrong setting "
+                    "convention the file does not record). It matters for PG, "
+                    "SD and THG, which fix the direction of time: a wrong setting "
                     "there time-reverses the retrieved pulse and flips the sign "
                     "of every phase order, which is invisible on a symmetric "
                     "transform-limited pulse. An SHG trace is symmetric in "
@@ -225,8 +225,9 @@ class StageLoad(Stage):
                 ),
                 (
                     "interaction",
-                    "Nonlinear FROG geometry: SHG (second-harmonic), SD "
-                    "(self-diffraction) or PG (polarization gating).",
+                    "Nonlinear FROG geometry: SHG (second-harmonic), THG "
+                    "(third-harmonic), SD (self-diffraction) or PG "
+                    "(polarization gating).",
                 ),
                 (
                     "pulse energy (J)",
@@ -350,7 +351,7 @@ class StageLoad(Stage):
         form.addRow(
             "interaction",
             combo(
-                ["shg", "sd", "pg"],
+                list(INTERACTIONS),
                 p.interaction,
                 lambda v: setattr(p, "interaction", v),
             ),

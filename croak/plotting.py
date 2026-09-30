@@ -1136,7 +1136,8 @@ class RetrievalPlotData:
     measured, retrieved : ndarray
         Measured and retrieved traces, shape ``(Nω, Nτ)``.
     omega0_trace : float
-        Centre angular frequency of the *signal* (twice ``omega0`` for SHG), so
+        Centre angular frequency of the *signal* (``omega0`` times the
+        interaction's ``omega0_scale``: twice it for SHG, three times for THG), so
         the trace panels' frequency axis reads at the signal frequency.
     halfwidth : float
         Half the delay span (s); bounds the delay axes.
@@ -1994,7 +1995,8 @@ def plot_retrieval(
     spectrogram panels. ``flim`` bounds the **frequency** axis of the trace and
     residual panels, as ``(f_min, f_max)`` in Hz; the default shows the whole
     retrieval grid. The two are separate because the trace sits at the *signal*
-    frequency, which for SHG is twice the pulse's. Reach for ``flim`` when the
+    frequency, which for SHG is twice the pulse's (three times for THG). Reach
+    for ``flim`` when the
     retrieval grid is much wider than the signal — typical when retrieving
     directly on a synthesis grid rather than on one cropped by
     :func:`~croak.preprocess.load_and_clean` — where the trace would otherwise be

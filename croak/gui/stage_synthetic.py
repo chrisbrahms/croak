@@ -131,7 +131,7 @@ class StageSynthetic(Stage):
         )
         form.addRow(self.spec_mirror)
         # fundamental-spectrum λ window (nm); mirrors the trace window scaled to
-        # the fundamental (×2 for SHG) until the user unmirrors it.
+        # the fundamental (×2 for SHG, ×3 for THG) until the user unmirrors it.
         self._spec_wl = (700.0, 900.0)
         self.spec_range = RangeControl(
             100.0, 4000.0, *self._spec_wl, decimals=0, step=10.0
@@ -234,7 +234,7 @@ class StageSynthetic(Stage):
             )
 
     def _on_interaction(self, _value):
-        # the SHG fundamental sits at 2× the signal wavelength, so a mirrored
+        # the SHG (THG) fundamental sits at 2× (3×) the signal wavelength, so a mirrored
         # spectrum window must follow the interaction's omega0 scaling.
         self._sync_spec_mirror()
         self._changed()
@@ -311,7 +311,8 @@ class StageSynthetic(Stage):
         """Mirror the trace λ window onto the independent spectrum (when enabled).
 
         The fundamental spectrum sits at the signal wavelength scaled by the
-        interaction's ``omega0_scale`` (×2 for SHG, ×1 for PG/SD), and the point
+        interaction's ``omega0_scale`` (×2 for SHG, ×3 for THG, ×1 for PG/SD), and
+        the point
         count tracks ``# λ points``.
         """
         if not self.spec_mirror.isChecked():

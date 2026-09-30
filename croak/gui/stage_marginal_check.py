@@ -4,18 +4,18 @@ Sits between the data loaders (experimental, simulated, synthetic) and the
 preprocess stage. It compares the measured trace's wavelength marginal with the
 marginal **predicted** from the independent fundamental spectrum
 (:func:`croak.marginal_checks.predicted_marginal`): exact for SHG (the spectral
-autoconvolution), transform-limited for PG/TG/SD. It overlays the predicted
+autoconvolution), transform-limited for PG/TG/SD/THG. It overlays the predicted
 marginal, marks the predicted vs measured centroid, reports the width
 (bracket) check, and lets the user tune the ``(λ/µm)^exp`` third-order
 efficiency correction — with an ``Auto`` that matches the marginal centroid onto
 the prediction.
 
-The trust region (190–1000 nm for a measured trace; the full loaded range for
-the noise-free simulated/synthetic traces) bounds the peak finding, the
-centroid/width moments, the marginal normalisation and the trace display
-scaling, so out-of-band detector noise — strongly amplified by the tilt — cannot
-distort either the checks or the colour scaling (the cause of the load preview
-"saturating" as the exponent was raised).
+The trust region (190–1000 nm for a measured trace; the full loaded range —
+trace and independent spectrum — for the noise-free simulated/synthetic traces)
+bounds the peak finding, the centroid/width moments, the marginal normalisation
+and the trace display scaling, so out-of-band detector noise — strongly
+amplified by the tilt — cannot distort either the checks or the colour scaling
+(the cause of the load preview "saturating" as the exponent was raised).
 
 The marginals are plotted against frequency by default: a marginal is a
 frequency density and the convolution/centroid/width identities live in
@@ -69,11 +69,11 @@ class StageMarginalCheck(Stage):
         "Quality-control the trace before retrieval using its frequency "
         "marginal (the trace integrated over delay). The marginal predicted "
         "from the independent fundamental spectrum is exact for SHG (the "
-        "spectral autoconvolution) and transform-limited for PG/TG/SD; comparing "
-        "shape, centroid and width flags calibration, spectral-response, scatter "
-        "and detector-nonlinearity problems. Tune the (λ/µm)^exp third-order "
-        "efficiency correction here; 'Auto' matches the marginal centroid to the "
-        "prediction."
+        "spectral autoconvolution) and transform-limited for PG/TG/SD/THG; "
+        "comparing shape, centroid and width flags calibration, "
+        "spectral-response, scatter and detector-nonlinearity problems. Tune "
+        "the (λ/µm)^exp third-order efficiency correction here; 'Auto' matches "
+        "the marginal centroid to the prediction."
     )
     HELP = [
         (
@@ -88,7 +88,9 @@ class StageMarginalCheck(Stage):
                     "noisy measured wings (amplified by the (λ/µm)^exp tilt) cannot "
                     "contaminate the prediction. Defaults to 190–1000 nm for a "
                     "measured trace; the noise-free simulated/synthetic traces "
-                    "default to their full loaded wavelength range.",
+                    "default to their full loaded wavelength range (trace and "
+                    "independent spectrum, which for SHG/THG sit in different "
+                    "bands).",
                 ),
             ],
         ),
@@ -253,10 +255,15 @@ class StageMarginalCheck(Stage):
 
         Measured traces default to 190–1000 nm (a UV–NIR band that excludes the
         detector's noisy out-of-band wings); the noise-free simulated and
-        synthetic traces default to their full loaded wavelength range. Keyed on
-        the trace so navigating away and back keeps a manual adjustment, while a
-        genuinely different trace re-defaults (an exponent change does not — it
-        re-enters via the draw path, not here, and keeps the same λ range).
+        synthetic traces default to their full loaded wavelength range — the
+        trace band together with the independent spectrum's band. The window
+        tapers the fundamental spectrum as well as the trace marginal, and for
+        a harmonic geometry (SHG at λ0/2, THG at λ0/3) the two bands do not
+        overlap, so a trace-only window would blank the spectrum and leave no
+        prediction. Keyed on the trace so navigating away and back keeps a
+        manual adjustment, while a genuinely different trace re-defaults (an
+        exponent change does not — it re-enters via the draw path, not here,
+        and keeps the same λ range).
         """
         lam_nm = data["lam"] / 1e-9
         entry = self.state.entry
@@ -266,7 +273,12 @@ class StageMarginalCheck(Stage):
         if entry == "experimental":
             trust = (190.0, 1000.0)
         else:  # simulated / synthetic: no detector noise -> the full range
-            trust = (float(np.floor(lam_nm.min())), float(np.ceil(lam_nm.max())))
+            lo, hi = float(lam_nm.min()), float(lam_nm.max())
+            lam_spec = data.get("lam_spec")
+            if lam_spec is not None and len(lam_spec) > 0:
+                lo = min(lo, float(np.min(lam_spec)) / 1e-9)
+                hi = max(hi, float(np.max(lam_spec)) / 1e-9)
+            trust = (float(np.floor(lo)), float(np.ceil(hi)))
         self._trust_nm = trust
         self._trust_key = key
         self.trust.set_values(*trust)  # signal-safe
@@ -534,7 +546,7 @@ class StageMarginalCheck(Stage):
 
         # Centroid check: vertical lines. The spectrum centroid (C1) sits on the
         # predicted-marginal centroid (C3) for PG/TG/SD, but at half it for SHG
-        # (whose marginal is centred at 2ω̄_S).
+        # (whose marginal is centred at 2ω̄_S) and a third of it for THG (3ω̄_S).
         c_meas_nm, sigma_meas = self._measured_moments(lam, marg, in_band)
         to_x = (lambda nm: float(wlfreq(nm * 1e-9) / _TWO_PI_PHZ)) if freq else float
         if c_meas_nm is not None:
@@ -625,7 +637,8 @@ class StageMarginalCheck(Stage):
         srt = np.argsort(lam_pred)
         # Centroid of the (windowed) fundamental spectrum, ω̄_S. It equals the
         # predicted marginal centroid for PG/TG/SD (the hard ω̄_S check) but is at
-        # half it for SHG, whose marginal sits at 2ω̄_S.
+        # half it for SHG, whose marginal sits at 2ω̄_S, and a third of it for THG
+        # (3ω̄_S).
         spec_centroid = float(centroid(omega, s_omega))
         return {
             "lam_nm": lam_pred[srt] / 1e-9,
