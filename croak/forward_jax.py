@@ -80,6 +80,7 @@ _C_LIGHT = 299_792_458.0
 #: Wirtinger adjoints below. Keys match :data:`croak.interactions.INTERACTIONS`.
 _JAX_INTERACTIONS: dict[str, Callable[[jnp.ndarray, jnp.ndarray], jnp.ndarray]] = {
     "shg": lambda test, gate: test * gate,
+    "thg": lambda test, gate: test**2 * gate,
     "sd": lambda test, gate: test**2 * jnp.conj(gate),
     "pg": lambda test, gate: test * jnp.abs(gate) ** 2,
 }
@@ -92,6 +93,10 @@ _JAX_INTERACTION_ADJOINTS: dict[
     Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], tuple[jnp.ndarray, jnp.ndarray]],
 ] = {
     "shg": lambda test, gate, s_bar: (jnp.conj(gate) * s_bar, jnp.conj(test) * s_bar),
+    "thg": lambda test, gate, s_bar: (
+        2.0 * jnp.conj(test * gate) * s_bar,
+        jnp.conj(test**2) * s_bar,
+    ),
     "sd": lambda test, gate, s_bar: (
         2.0 * jnp.conj(test) * gate * s_bar,
         test**2 * jnp.conj(s_bar),
@@ -103,8 +108,8 @@ _JAX_INTERACTION_ADJOINTS: dict[
 }
 
 #: JAX twin of :meth:`croak.interactions.Interaction.smeared_signal`: combine the
-#: ``p``-independent replica with the pair at ``varying_base -/+ p/2``. SHG is absent —
-#: geometric smearing is only defined for the three-arm PG/SD forms.
+#: ``p``-independent replica with the pair at ``varying_base -/+ p/2``. SHG and THG are
+#: absent — geometric smearing is only defined for the three-arm PG/SD forms.
 _JAX_SMEARED_INTERACTIONS: dict[
     str, Callable[[jnp.ndarray, jnp.ndarray, jnp.ndarray], jnp.ndarray]
 ] = {
@@ -152,7 +157,8 @@ class _SignalConstants:
     ):
         inter = get_interaction(interaction)
         # Same physical guard as ForwardModel: a slab built at the fundamental
-        # cannot consistently propagate an SHG signal that lives near 2*omega0.
+        # cannot consistently propagate a harmonic (SHG/THG) signal that lives
+        # near 2*omega0 or 3*omega0.
         if material is not None and thickness and inter.omega0_scale != 1.0:
             raise ValueError(
                 f"dispersive propagation is not supported for the "
@@ -256,7 +262,7 @@ def make_signal_fn(
         Delay axis (s); only its length/values inform the closure, ``tau`` is a
         runtime argument (kept for signature parity with the numpy model).
     interaction : str
-        ``"shg"``, ``"sd"`` or ``"pg"``.
+        ``"shg"``, ``"thg"``, ``"sd"`` or ``"pg"``.
     material, thickness, npoints, omega0, quadrature
         Dispersive-slab parameters; see :class:`croak.forward.ForwardModel`.
 
@@ -639,7 +645,7 @@ def make_param_trace_fn(
             f"interaction; only PG (TG) and SD have the required three-arm form"
         )
     # Same physical guard as the forward model: a slab built at the fundamental
-    # cannot consistently propagate a signal that lives away from omega0 (SHG).
+    # cannot consistently propagate a signal that lives away from omega0 (SHG, THG).
     if material is not None and thickness and inter.omega0_scale != 1.0:
         raise ValueError(
             f"dispersive propagation is not supported for the "

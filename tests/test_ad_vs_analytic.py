@@ -273,7 +273,7 @@ def test_ad_matches_analytic_gradient(
     assert np.allclose(ga, gc, rtol=1e-8, atol=1e-10)
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_ad_matches_analytic_gradient_r_omega(interaction):
     """The per-frequency-scaling (``R_omega``) gradient also matches AD."""
     g = Grid(64, dt=0.4e-15)

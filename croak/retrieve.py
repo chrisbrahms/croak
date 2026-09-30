@@ -108,7 +108,7 @@ def retrieve(
     delays : array_like
         Delay axis (s).
     interaction : str
-        ``"shg"``, ``"sd"`` or ``"pg"``.
+        ``"shg"``, ``"thg"``, ``"sd"`` or ``"pg"``.
     algorithm : str, optional
         ``"warm-lbfgs"`` (the default: ``lbfgs-ad`` warm-started from COPRA's
         local sweep), ``"copra"``, ``"copra-jax"``, ``"lbfgs"``,

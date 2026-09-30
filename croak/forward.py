@@ -96,7 +96,7 @@ class ForwardModel:
     delays : array_like
         Delay axis (s).
     interaction : str or Interaction
-        Nonlinear interaction (``"shg"``, ``"sd"``, ``"pg"``).
+        Nonlinear interaction (``"shg"``, ``"thg"``, ``"sd"``, ``"pg"``).
     material : str or None, optional
         Dispersive material for the slab (e.g. ``"SiO2"``); ``None`` (default)
         is a thin, dispersionless medium.
@@ -146,9 +146,10 @@ class ForwardModel:
         self.omega0 = float(omega0)
 
         # The slab propagation phase β(ω) is built at the *fundamental* carrier,
-        # but the SHG signal lives near 2ω0 — propagating it with β(ω) is
-        # physically inconsistent. Dispersive propagation is only meaningful for
-        # interactions whose signal stays at the fundamental (PG, SD).
+        # but a harmonic signal lives near n·ω0 (2ω0 for SHG, 3ω0 for THG) —
+        # propagating it with β(ω) is physically inconsistent. Dispersive
+        # propagation is only meaningful for interactions whose signal stays at
+        # the fundamental (PG, SD).
         if material is not None and thickness and self.interaction.omega0_scale != 1.0:
             raise ValueError(
                 f"dispersive propagation is not supported for the "

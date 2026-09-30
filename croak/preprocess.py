@@ -1245,7 +1245,7 @@ def regrid(
     lam_spec, Ilam_spec : array_like or None
         Independent fundamental spectrum, or ``None``.
     interaction : str
-        ``"shg"``/``"sd"``/``"pg"`` (sets the trace carrier scaling).
+        ``"shg"``/``"thg"``/``"sd"``/``"pg"`` (sets the trace carrier scaling).
     lam_min, lam_max : float
         Output retrieval wavelength range (m).
     trange : float, optional
@@ -1425,7 +1425,7 @@ class TraceData:
     Attributes
     ----------
     interaction : str
-        ``"shg"``/``"sd"``/``"pg"``.
+        ``"shg"``/``"thg"``/``"sd"``/``"pg"``.
     grid : Grid
         Uniform retrieval grid.
     delays : numpy.ndarray
@@ -1538,7 +1538,7 @@ def load_and_clean(
         Stage position (m) if ``input_unit="position"`` (converted via
         ``τ = 2z/c``) or delay (s) if ``input_unit="delay"``.
     interaction : str
-        ``"shg"``/``"sd"``/``"pg"``.
+        ``"shg"``/``"thg"``/``"sd"``/``"pg"``.
     lam_min, lam_max : float
         Retrieval wavelength range (m).
     lamm_lims : tuple, optional

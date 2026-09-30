@@ -6,6 +6,7 @@ import pytest
 from croak.forward import ForwardModel, maketrace, quadrature_nodes_weights
 from croak.grid import Grid
 from croak.maths import wlfreq
+from croak.pulses import gaussian_pulse
 
 
 @pytest.fixture
@@ -27,7 +28,7 @@ def test_quadrature_thin_and_gausslegendre():
     assert np.all((nodes >= 0) & (nodes <= 10e-6))
 
 
-@pytest.mark.parametrize("interaction", ["shg", "sd", "pg"])
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
 def test_trace_shape_and_normalization(grid, interaction):
     ew = _gauss_spectrum(grid)
     delays = np.linspace(-30e-15, 30e-15, 21)
@@ -37,7 +38,7 @@ def test_trace_shape_and_normalization(grid, interaction):
     assert np.all(trace >= 0)
 
 
-@pytest.mark.parametrize("interaction", ["shg", "sd", "pg"])
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
 def test_thin_equals_zero_thickness_dispersive(grid, interaction):
     ew = _gauss_spectrum(grid)
     delays = np.linspace(-30e-15, 30e-15, 15)
@@ -84,7 +85,7 @@ def _fd_grad(func, z, h=1e-7):
     return gr, gi
 
 
-@pytest.mark.parametrize("interaction", ["shg", "sd", "pg"])
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
 def test_adjoint_matches_fd_thin(grid, interaction):
     rng = np.random.default_rng(7)
     ew = _gauss_spectrum(grid) + 0.1 * (
@@ -139,3 +140,53 @@ def test_adjoint_matches_fd_dispersive(grid):
     fd_re, fd_im = _fd_grad(loss_only, ew)
     assert np.allclose(2 * np.real(ew_bar), fd_re, atol=1e-4, rtol=1e-4)
     assert np.allclose(2 * np.imag(ew_bar), fd_im, atol=1e-4, rtol=1e-4)
+
+
+@pytest.mark.parametrize("interaction", ["shg", "thg"])
+def test_harmonic_rejects_dispersive_medium(grid, interaction):
+    # The slab phase is built at the fundamental; a harmonic signal cannot use it.
+    with pytest.raises(ValueError, match="dispersive propagation"):
+        ForwardModel(
+            grid.omega,
+            np.array([0.0]),
+            interaction,
+            material="SiO2",
+            thickness=10e-6,
+            omega0=wlfreq(800e-9),
+        )
+
+
+@pytest.fixture
+def chirp_grid():
+    return Grid(256, dt=0.4e-15)
+
+
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
+def test_time_reversal_mirrors_the_delay_axis(chirp_grid, interaction):
+    """E(t) -> E*(-t) (conjugated spectrum) maps every trace to I(omega, -tau)."""
+    ew = gaussian_pulse(chirp_grid, 6e-15, phases=[30e-30, 300e-45])
+    delays = np.linspace(-40e-15, 40e-15, 41)  # symmetric, so [::-1] is -tau
+    direct = maketrace(chirp_grid.omega, delays, ew, interaction)
+    reversed_ = maketrace(chirp_grid.omega, delays, np.conj(ew), interaction)
+    np.testing.assert_allclose(reversed_, direct[:, ::-1], atol=1e-12)
+
+
+def test_thg_trace_cannot_see_the_gdd_sign_of_a_gaussian(chirp_grid):
+    """A linearly chirped Gaussian gives a delay-symmetric THG trace.
+
+    With pure quadratic phase, E(t)**2 E(t - tau) is a Gaussian times a chirp both
+    centred on t = tau/3, so |FFT|**2 depends on tau only through tau**2: the trace
+    of +GDD equals that of -GDD. SD sees the sign; adding TOD lets THG see it too.
+    """
+    delays = np.linspace(-40e-15, 40e-15, 41)
+
+    def trace(interaction, gdd, tod=0.0):
+        ew = gaussian_pulse(chirp_grid, 6e-15, phases=[gdd, tod])
+        return maketrace(chirp_grid.omega, delays, ew, interaction)
+
+    # Exact in the continuum; on the sampled grid the equality holds to ~1e-10 of
+    # the unit peak, far below the percent-level contrast of the other cases.
+    np.testing.assert_allclose(trace("thg", 30e-30), trace("thg", -30e-30), atol=1e-8)
+    assert np.max(np.abs(trace("sd", 30e-30) - trace("sd", -30e-30))) > 1e-2
+    thg_tod = np.abs(trace("thg", 30e-30, 300e-45) - trace("thg", -30e-30, 300e-45))
+    assert np.max(thg_tod) > 1e-2

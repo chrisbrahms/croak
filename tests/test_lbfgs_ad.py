@@ -27,7 +27,7 @@ def setup():
     return g, ew, delays
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_lbfgs_ad_near_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -36,7 +36,7 @@ def test_lbfgs_ad_near_initial(setup, interaction):
     assert res.error < 5e-3
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_lbfgs_ad_random_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -189,7 +189,7 @@ def test_lbfgs_ad_spectral_reg_improves_spectrum(setup):
     assert spec_l2(r1) < spec_l2(r0)
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_lbfgs_ad_matches_lbfgs(setup, interaction):
     """``lbfgs-ad`` reaches a final error comparable to analytic ``lbfgs``."""
     g, ew, delays = setup

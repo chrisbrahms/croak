@@ -9,13 +9,14 @@ The adjoints are validated against central finite differences. For a real loss
 import numpy as np
 import pytest
 
-from croak.interactions import PG, SD, SHG, get_interaction
+from croak.interactions import INTERACTIONS, PG, SD, SHG, THG, get_interaction
 
 
 def test_signal_forms():
     e = np.array([1 + 2j, -1j])
     g = np.array([0.5 + 0j, 2 + 1j])
     assert np.allclose(SHG().signal(e, g), e * g)
+    assert np.allclose(THG().signal(e, g), e**2 * g)
     assert np.allclose(SD().signal(e, g), e**2 * np.conj(g))
     assert np.allclose(PG().signal(e, g), e * np.abs(g) ** 2)
 
@@ -25,6 +26,26 @@ def test_get_interaction():
     assert get_interaction(PG()).name == "pg"
     with pytest.raises(ValueError):
         get_interaction("xpw")
+
+
+@pytest.mark.parametrize("name", ["thg", "THG", "Thg"])
+def test_get_interaction_thg_case_insensitive(name):
+    assert isinstance(get_interaction(name), THG)
+
+
+def test_interactions_registry_lists_all_geometries():
+    assert set(INTERACTIONS) == {"shg", "thg", "sd", "pg"}
+
+
+@pytest.mark.parametrize(
+    ("interaction", "scale", "ambiguous"),
+    [(SHG(), 2.0, True), (THG(), 3.0, False), (SD(), 1.0, False), (PG(), 1.0, False)],
+)
+def test_interaction_class_attributes(interaction, scale, ambiguous):
+    # omega0_scale is the harmonic order of the signal carrier; only SHG's
+    # arm-symmetric E*G kernel leaves the direction of time ambiguous.
+    assert interaction.omega0_scale == scale
+    assert interaction.time_reversal_ambiguous is ambiguous
 
 
 def _real_loss(interaction, e, g, w):
@@ -50,7 +71,7 @@ def _fd_grad(func, z, h=1e-7):
     return gr, gi
 
 
-@pytest.mark.parametrize("interaction", [SHG(), SD(), PG()])
+@pytest.mark.parametrize("interaction", [SHG(), THG(), SD(), PG()])
 def test_signal_adjoint_matches_finite_differences(interaction):
     rng = np.random.default_rng(42)
     n = 6

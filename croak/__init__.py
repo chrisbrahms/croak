@@ -2,7 +2,7 @@
 
 Reconstructs the full complex electric field of an ultrashort laser pulse —
 spectral amplitude *and* phase — from a delay-scanned nonlinear-process spectrum.
-The package ships the three FROG geometries (SHG, SD and PG/transient-grating)
+The package ships four FROG geometries (SHG, THG, SD and PG/transient-grating)
 in the thin-medium limit, and PG/SD additionally through a dispersive medium,
 with the whole workflow around them: loading,
 cleaning, retrieval, post-processing, uncertainty, plotting, saving and a GUI.
@@ -73,7 +73,7 @@ from .dispersion import apply_dispersion
 from .forward import ForwardModel, maketrace
 from .forward_jax import make_signal_fn, make_trace_fn, maketrace_jax
 from .grid import Grid, gridparams_lambda, gridparams_omega
-from .interactions import PG, SD, SHG, get_interaction
+from .interactions import PG, SD, SHG, THG, get_interaction
 from .lbfgs import LBFGS
 from .lbfgs_ad import LBFGSAD
 from .lbfgs_hand import LBFGSHand
@@ -215,6 +215,7 @@ __all__ = [
     "gridparams_lambda",
     # interactions
     "SHG",
+    "THG",
     "SD",
     "PG",
     "get_interaction",

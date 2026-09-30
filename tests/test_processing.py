@@ -249,11 +249,16 @@ def _asymmetric_setup():
 
 
 def test_conjugating_the_spectrum_leaves_an_shg_trace_invariant():
-    """The premise of the ambiguity: SHG cannot see the flip, SD and PG can."""
+    """The premise of the ambiguity: SHG cannot see the flip, THG, SD and PG can."""
     grid, _, ew, delays, _ = _asymmetric_setup()
     from croak.metrics import trace_error
 
-    for interaction, ambiguous in (("shg", True), ("sd", False), ("pg", False)):
+    for interaction, ambiguous in (
+        ("shg", True),
+        ("thg", False),
+        ("sd", False),
+        ("pg", False),
+    ):
         direct = maketrace(grid.omega, delays, ew, interaction)
         flipped = maketrace(grid.omega, delays, np.conj(ew), interaction)
         same = trace_error(direct, flipped) < 1e-12

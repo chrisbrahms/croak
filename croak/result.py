@@ -25,7 +25,7 @@ class RetrievalResult:
     delays : numpy.ndarray
         Delay axis (s).
     interaction : str
-        Interaction name (``"shg"``/``"sd"``/``"pg"``).
+        Interaction name (``"shg"``/``"thg"``/``"sd"``/``"pg"``).
     algorithm : str
         Algorithm name — one of the keys of
         :data:`croak.retrieve.ALGORITHMS` (``"copra"``, ``"copra-jax"``,

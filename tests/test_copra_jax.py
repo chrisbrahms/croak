@@ -19,7 +19,7 @@ def setup():
     return g, ew, delays
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_copra_jax_perfect_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -27,7 +27,7 @@ def test_copra_jax_perfect_initial(setup, interaction):
     assert res.error < 1e-6
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_copra_jax_near_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -36,7 +36,7 @@ def test_copra_jax_near_initial(setup, interaction):
     assert res.error < 5e-3
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_copra_jax_random_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -111,7 +111,7 @@ def test_copra_jax_dispersive():
     assert res.error < 5e-2
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_copra_jax_matches_numpy(setup, interaction):
     """With the same seeded permutation, copra-jax tracks numpy COPRA closely."""
     g, ew, delays = setup

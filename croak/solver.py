@@ -187,7 +187,7 @@ def assemble_result(
     weights : numpy.ndarray
         Per-frequency weights (length ``Nomega``).
     interaction : str
-        ``"shg"``/``"sd"``/``"pg"`` (normalised via
+        ``"shg"``/``"thg"``/``"sd"``/``"pg"`` (normalised via
         :func:`~croak.interactions.get_interaction`).
     algorithm : str
         Algorithm name recorded on the result.
@@ -356,7 +356,7 @@ class Retriever:
         delays : array_like
             Delay axis (s).
         interaction : str
-            ``"shg"``, ``"sd"`` or ``"pg"``.
+            ``"shg"``, ``"thg"``, ``"sd"`` or ``"pg"``.
         guess : None, array_like or Pulse, optional
             Initial guess (see :func:`resolve_guess`).
         weights : array_like, optional

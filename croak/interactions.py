@@ -3,12 +3,13 @@
 Each interaction defines the instantaneous nonlinear signal field produced by a
 (undelayed) *test* field ``E`` and a (delayed) *gate* field ``G`` in the time
 domain, together with the reverse-mode (Wirtinger) adjoint used to back-propagate
-a cotangent through that signal. The three standard geometries are supported:
+a cotangent through that signal. Four geometries are supported:
 
 ================  =====================  =================================
 Interaction       signal ``s``           geometry
 ================  =====================  =================================
 ``SHG``           ``E * G``              second-harmonic generation
+``THG``           ``E**2 * G``           third-harmonic generation
 ``SD``            ``E**2 * conj(G)``     self-diffraction
 ``PG``            ``E * |G|**2``         polarization gating
 ================  =====================  =================================
@@ -31,7 +32,7 @@ from typing import ClassVar
 import numpy as np
 from numpy.typing import NDArray
 
-__all__ = ["Interaction", "SHG", "SD", "PG", "get_interaction", "INTERACTIONS"]
+__all__ = ["Interaction", "SHG", "THG", "SD", "PG", "get_interaction", "INTERACTIONS"]
 
 Complex = NDArray[np.complex128]
 
@@ -44,14 +45,15 @@ class Interaction:
     """
 
     name: ClassVar[str]
-    #: Factor relating the trace carrier to the pulse carrier (SHG doubles it).
+    #: Factor relating the trace carrier to the pulse carrier (the harmonic order:
+    #: SHG doubles it, THG triples it; the chi(3) SD and PG signals stay at omega0).
     omega0_scale: ClassVar[float] = 1.0
     #: Whether the trace is invariant under time reversal of the pulse,
     #: :math:`E(t) \to E^*(-t)` — equivalently conjugating the spectrum. When it
     #: is, the retrieval cannot distinguish a pulse from its mirror image and the
     #: solver returns whichever branch it happened to land in. True only for SHG,
-    #: whose signal ``E*G`` is symmetric in the two arms; the SD and PG kernels
-    #: treat their arms differently and so fix the direction of time. See
+    #: whose signal ``E*G`` is symmetric in the two arms; the THG, SD and PG
+    #: kernels treat their arms differently and so fix the direction of time. See
     #: :func:`croak.processing.resolve_time_direction`.
     time_reversal_ambiguous: ClassVar[bool] = False
 
@@ -128,6 +130,47 @@ class SHG(Interaction):
         return test_bar, gate_bar
 
 
+class THG(Interaction):
+    r"""Third-harmonic generation: ``s = E**2 * G``.
+
+    The test arm drives the nonlinearity twice and the delayed gate once, so the
+    signal oscillates near :math:`3\omega_0` (``omega0_scale = 3``). Neither factor
+    is conjugated, which makes ``s`` holomorphic in both arms; its Wirtinger adjoint
+    is therefore the complex conjugate of the ordinary derivative times ``s_bar``.
+
+    Unlike SHG the two arms enter asymmetrically (``E**2`` against ``G``): time
+    reversal :math:`E(t) \to E^*(-t)` maps the trace to ``I(omega, -tau)``. That
+    differs from ``I(omega, tau)`` unless the pulse is its own time reverse (e.g. a
+    chirp-free, symmetric pulse), so a chirped pulse and its opposite-chirp mirror
+    give distinguishable traces and THG FROG fixes the direction of time
+    (:attr:`time_reversal_ambiguous` is False).
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> e, g = np.array([1.0 + 1.0j]), np.array([2.0 + 0.0j])
+    >>> THG().signal(e, g)
+    array([0.+4.j])
+    """
+
+    name = "thg"
+    omega0_scale = 3.0
+
+    def signal(self, test, gate):
+        """Return the THG signal ``E**2 * G``."""
+        return test**2 * gate
+
+    def signal_adjoint(self, test, gate, s_bar):
+        r"""Return ``(test_bar, gate_bar)`` for the THG signal ``E**2 * G``.
+
+        ``s`` is holomorphic, so :math:`\bar E = (\partial s/\partial E)^*\,\bar s
+        = 2 E^* G^* \bar s` and :math:`\bar G = (E^2)^*\,\bar s`.
+        """
+        test_bar = 2.0 * np.conj(test * gate) * s_bar
+        gate_bar = np.conj(test**2) * s_bar
+        return test_bar, gate_bar
+
+
 class SD(Interaction):
     """Self-diffraction: ``s = E**2 * conj(G)``."""
 
@@ -186,7 +229,7 @@ class PG(Interaction):
 
 
 #: Registry of interaction instances keyed by lowercase name.
-INTERACTIONS: dict[str, Interaction] = {c.name: c() for c in (SHG, SD, PG)}
+INTERACTIONS: dict[str, Interaction] = {c.name: c() for c in (SHG, THG, SD, PG)}
 
 
 def get_interaction(interaction: str | Interaction) -> Interaction:
@@ -195,7 +238,7 @@ def get_interaction(interaction: str | Interaction) -> Interaction:
     Parameters
     ----------
     interaction : str or Interaction
-        ``"shg"``, ``"sd"``, ``"pg"`` (any case) or an :class:`Interaction`.
+        ``"shg"``, ``"thg"``, ``"sd"``, ``"pg"`` (any case) or an :class:`Interaction`.
 
     Returns
     -------

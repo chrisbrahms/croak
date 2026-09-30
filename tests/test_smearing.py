@@ -268,7 +268,8 @@ def test_kernel_from_arms_rejects_shg_and_bad_geometry():
         )
 
 
-def test_square_boxcars_rejects_negative_spacing_and_shg():
+@pytest.mark.parametrize("harmonic", ["shg", "thg"])
+def test_square_boxcars_rejects_negative_spacing_and_harmonic(harmonic):
     with pytest.raises(ValueError, match="hole_spacing"):
         square_boxcars_kernel(
             "pg",
@@ -278,7 +279,7 @@ def test_square_boxcars_rejects_negative_spacing_and_shg():
         )
     with pytest.raises(ValueError, match="three-arm"):
         square_boxcars_kernel(
-            "shg",
+            harmonic,
             hole_diameter=HOLE_DIAMETER,
             hole_spacing=HOLE_SPACING,
             wavelength=WAVELENGTH,
@@ -521,11 +522,12 @@ def test_smearing_broadens_the_delay_marginal(setup, interaction):
     assert var_b > var_a
 
 
-def test_smearing_rejects_shg_and_nonuniform_delays(setup):
+@pytest.mark.parametrize("harmonic", ["shg", "thg"])
+def test_smearing_rejects_harmonic_and_nonuniform_delays(setup, harmonic):
     g, ew, delays = setup
     kernel = SmearingKernel(sigma_p=0.3e-15, sigma_delta=0.3e-15)
     with pytest.raises(ValueError, match="three-arm"):
-        maketrace(g.omega, delays, ew, "shg", smearing=kernel)
+        maketrace(g.omega, delays, ew, harmonic, smearing=kernel)
     with pytest.raises(ValueError, match="uniformly spaced"):
         maketrace(g.omega, np.sort(np.append(delays, 1e-15)), ew, "pg", smearing=kernel)
 

@@ -30,7 +30,7 @@ def setup():
 
 
 @pytest.mark.parametrize("solver", SOLVERS)
-@pytest.mark.parametrize("interaction", ["pg", "sd", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "sd", "shg", "thg"])
 def test_optx_near_initial(setup, solver, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
@@ -87,7 +87,7 @@ def test_optx_reltol_plateau_stops_earlier(setup, solver):
     assert loose < tight  # and a looser tolerance stops sooner
 
 
-@pytest.mark.parametrize("interaction", ["pg", "sd", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "sd", "shg", "thg"])
 def test_optx_lm_random_initial(setup, interaction):
     """OptxLM converges to the global minimum even from a random guess."""
     g, ew, delays = setup
@@ -326,7 +326,7 @@ def test_optx_lm_rejects_unknown_linear_solver():
         OptxLM(linear_solver="cholesky")
 
 
-@pytest.mark.parametrize("interaction", ["pg", "sd", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "sd", "shg", "thg"])
 def test_optx_lm_linear_solvers_agree(setup, interaction):
     """Both routes solve the same system, so they must land on the same pulse.
 

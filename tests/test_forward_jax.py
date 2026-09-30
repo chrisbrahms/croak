@@ -2,7 +2,7 @@
 
 The JAX twin must reproduce the numpy :class:`croak.forward.ForwardModel` trace to
 near machine precision (it shares all conventions; only the array library
-differs). These tests pin that equivalence and the dispersive-SHG guard. The
+differs). These tests pin that equivalence and the dispersive-harmonic guard. The
 JAX model also underpins :mod:`test_ad_vs_analytic`, where it validates the
 hand-derived adjoints by automatic differentiation.
 """
@@ -28,7 +28,7 @@ def setup():
     return g, ew, delays
 
 
-@pytest.mark.parametrize("interaction", ["shg", "sd", "pg"])
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
 def test_jax_trace_matches_numpy_thin(setup, interaction):
     g, ew, delays = setup
     a = maketrace(g.omega, delays, ew, interaction)
@@ -36,7 +36,7 @@ def test_jax_trace_matches_numpy_thin(setup, interaction):
     assert np.allclose(a, b, atol=1e-10, rtol=1e-10)
 
 
-@pytest.mark.parametrize("interaction", ["pg", "sd"])  # SHG invalid with dispersion
+@pytest.mark.parametrize("interaction", ["pg", "sd"])  # SHG/THG invalid with dispersion
 def test_jax_trace_matches_numpy_dispersive(setup, interaction):
     g, ew, delays = setup
     omega0 = wlfreq(800e-9)
@@ -54,13 +54,14 @@ def test_jax_unnormalised_matches_numpy(setup):
     assert np.allclose(a, b, atol=1e-12, rtol=1e-10)
 
 
-def test_dispersive_shg_guard(setup):
+@pytest.mark.parametrize("interaction", ["shg", "thg"])
+def test_dispersive_harmonic_guard(setup, interaction):
     g, ew, delays = setup
     with pytest.raises(ValueError, match="dispersive"):
         make_trace_fn(
             g.omega,
             delays,
-            "shg",
+            interaction,
             material="SiO2",
             thickness=10e-6,
             npoints=8,
@@ -71,7 +72,7 @@ def test_dispersive_shg_guard(setup):
 # ---------------------------------------------------------------------------
 # Parametric forward (thickness / delay-zero as runtime arguments)
 # ---------------------------------------------------------------------------
-@pytest.mark.parametrize("interaction", ["shg", "sd", "pg"])
+@pytest.mark.parametrize("interaction", ["shg", "thg", "sd", "pg"])
 def test_param_trace_matches_standard_thin(setup, interaction):
     """With no extras fitted the parametric trace equals the standard one."""
     g, ew, delays = setup
@@ -169,13 +170,14 @@ def test_param_fit_thickness_requires_dispersive(setup):
         make_param_trace_fn(g.omega, delays, "pg", fit_thickness=True)
 
 
-def test_param_dispersive_shg_guard(setup):
+@pytest.mark.parametrize("interaction", ["shg", "thg"])
+def test_param_dispersive_harmonic_guard(setup, interaction):
     g, _ew, delays = setup
     with pytest.raises(ValueError, match="dispersive"):
         make_param_trace_fn(
             g.omega,
             delays,
-            "shg",
+            interaction,
             material="SiO2",
             thickness=10e-6,
             npoints=8,

@@ -25,7 +25,7 @@ def setup():
     return g, ew, delays
 
 
-@pytest.mark.parametrize("interaction", ["pg", "shg"])
+@pytest.mark.parametrize("interaction", ["pg", "shg", "thg"])
 def test_lm_near_initial(setup, interaction):
     g, ew, delays = setup
     trace = maketrace(g.omega, delays, ew, interaction)
