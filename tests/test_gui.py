@@ -182,6 +182,29 @@ def test_synthetic_thg_trace_mirrors_a_tripled_spectrum_and_predicts(qtbot):
     assert w.state.tracedata.taper_loss < 0.01
 
 
+@pytest.mark.parametrize(
+    ("lam_nm", "interaction", "expected_nm"),
+    [
+        # a THG trace window maps onto the frequency-span-matched fundamental band
+        ((240.0, 300.0), "thg", (599.0, 1200.0)),
+        # a fundamental-range file loaded as SHG is too broad for any harmonic
+        # band: the seeding falls back to the scaled extent instead of raising
+        ((405.0, 1671.0), "shg", (810.0, 3342.0)),
+    ],
+)
+def test_preproc_defaults_seed_the_fundamental_band(lam_nm, interaction, expected_nm):
+    from croak.gui.stage_load import compute_preproc_defaults
+
+    data = {
+        "lam": np.linspace(lam_nm[0], lam_nm[1], 50) * 1e-9,
+        "scanaxis": np.linspace(-50e-15, 50e-15, 11),
+        "input_unit": "delay",
+        "interaction": interaction,
+    }
+    pp = compute_preproc_defaults(data)
+    assert (pp.lam_min_nm, pp.lam_max_nm) == pytest.approx(expected_nm, abs=1.0)
+
+
 def test_load_stage_offers_every_interaction(qtbot):
     """The experimental loader lists the registry, so THG is selectable."""
     w = Wizard()

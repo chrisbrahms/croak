@@ -114,7 +114,14 @@ def compute_preproc_defaults(data) -> PreprocParams:
     # than the fundamental, see croak.grid.fundamental_band). Bounds stay generous
     # so the user can widen the grid if needed.
     scale = get_interaction(data["interaction"]).omega0_scale
-    band_lo, band_hi = fundamental_band(lmin * 1e-9, lmax * 1e-9, scale)
+    try:
+        band_lo, band_hi = fundamental_band(lmin * 1e-9, lmax * 1e-9, scale)
+    except ValueError:
+        # The file's wavelength extent (the spectrometer range, not the signal
+        # band) is too broad to be any harmonic trace — e.g. a fundamental-range
+        # file loaded as SHG. A default must still exist, so fall back to the
+        # plain scaled extent; the user sizes the band in the preprocess stage.
+        band_lo, band_hi = lmin * 1e-9 * scale, lmax * 1e-9 * scale
     pp.lam_min_nm = float(np.floor(band_lo / 1e-9))
     pp.lam_max_nm = float(np.ceil(band_hi / 1e-9))
     pp.lam_bound_min_nm = max(50.0, 0.5 * pp.lam_min_nm)
