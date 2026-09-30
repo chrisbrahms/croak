@@ -69,6 +69,42 @@ def test_plot_retrieval_flim_bounds_the_trace_frequency_axis(result_and_trace):
     fig.clf()
 
 
+@pytest.mark.parametrize(("interaction", "order"), [("shg", 2.0), ("thg", 3.0)])
+def test_harmonic_trace_panels_share_the_signal_axis(interaction, order):
+    """Regression: residual and frequency marginal sit on the signal axis.
+
+    Both are trace quantities, so for a harmonic geometry they belong at
+    ``order * omega0`` like the measured/retrieved trace panels, not under the
+    fundamental carrier.
+    """
+    g = Grid(96, dt=0.5e-15)
+    omega0 = wlfreq(800e-9)
+    ew = gaussian_pulse(g, 7e-15, phases=[20e-30])
+    delays = np.linspace(-50e-15, 50e-15, 60)
+    trace = maketrace(g.omega, delays, ew, interaction)
+    res = retrieve(
+        trace,
+        g.omega,
+        delays,
+        interaction,
+        algorithm="copra",
+        maxiters=5,
+        guess=ew,
+        omega0=omega0,
+    )
+    fig = plotting.plot_retrieval(res, measured=trace)
+    axes = {ax.get_title(): ax for ax in fig.axes}
+    signal_phz = order * omega0 / (2 * np.pi) / 1e15
+    np.testing.assert_allclose(
+        axes["Residuals"].get_ylim(), axes["Measured (lin)"].get_ylim()
+    )
+    line = axes["Frequency marginal"].lines[0]
+    x, y = np.asarray(line.get_xdata()), np.asarray(line.get_ydata())
+    # the marginal's centroid sits at the signal carrier (the pulse is centred)
+    assert np.sum(x * y) / np.sum(y) == pytest.approx(signal_phz, abs=0.02)
+    fig.clf()
+
+
 def test_plot_simulated_trace(result_and_trace):
     res, trace = result_and_trace
     omega0_trace = res.omega0

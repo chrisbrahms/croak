@@ -1381,12 +1381,14 @@ def draw_residual(ax, data: RetrievalPlotData) -> ResidualArtists:
     pr = data.processed
     if pr.residual is None:
         return ResidualArtists(mesh=None)
+    # The residual is a trace, so it lives on the *signal* axis (omega0 times the
+    # harmonic order), the same axis as the measured/retrieved trace panels.
     mesh = plot_residual(
         ax,
         data.result.omega,
         data.result.delays,
         pr.residual,
-        data.result.omega0,
+        data.omega0_trace,
         halfwidth=data.halfwidth,
         flim=data.flim,
     )
@@ -1418,9 +1420,11 @@ def draw_spectral_filter(ax, data: RetrievalPlotData) -> LineArtists:
 def draw_freq_marginal(ax, data: RetrievalPlotData) -> MarginalArtists:
     """Draw the frequency marginal of the retrieved and measured traces."""
     pr = data.processed
+    # A trace marginal sits at the signal frequency: 2x (SHG) or 3x (THG) the
+    # pulse carrier, not under the fundamental spectrum's absolute axis.
     artists = plot_marginal(
         ax,
-        data.result.omega + data.result.omega0,
+        data.result.omega + data.omega0_trace,
         pr.omega_marg_retr,
         pr.omega_marg_meas,
         xlabel="Frequency (PHz)",
