@@ -3,7 +3,15 @@
 import numpy as np
 import pytest
 
-from croak.grid import Grid, gridparams_lambda, gridparams_omega, raw_fft, raw_ifft
+from croak.constants import C
+from croak.grid import (
+    Grid,
+    fundamental_band,
+    gridparams_lambda,
+    gridparams_omega,
+    raw_fft,
+    raw_ifft,
+)
 
 
 def test_grid_construction_consistency():
@@ -70,3 +78,36 @@ def test_gridparams_omega_window_and_nyquist():
 def test_gridparams_lambda_matches_omega():
     n, dt, w0 = gridparams_lambda(1e-12, lambda_min=700e-9, lambda_max=900e-9)
     assert n > 0 and dt > 0 and w0 > 0
+
+
+@pytest.mark.parametrize("order", [2.0, 3.0])
+def test_fundamental_band_places_the_trace_window_on_the_trace(order):
+    """The grid built from the band spans exactly the trace around n*omega0."""
+    lam_lo, lam_hi = 240e-9 * order / 3.0, 300e-9 * order / 3.0
+    lam_min, lam_max = fundamental_band(lam_lo, lam_hi, order)
+    omega_min, omega_max = 2 * np.pi * C / lam_max, 2 * np.pi * C / lam_min
+    omega0 = 0.5 * (omega_min + omega_max)  # gridparams_omega's carrier
+    half = 0.5 * (omega_max - omega_min)
+    trace_lo, trace_hi = 2 * np.pi * C / lam_hi, 2 * np.pi * C / lam_lo
+    assert order * omega0 - half == pytest.approx(trace_lo, rel=1e-12)
+    assert order * omega0 + half == pytest.approx(trace_hi, rel=1e-12)
+    # wider than naively dividing the trace frequencies by the order
+    assert lam_min < lam_lo * order and lam_max > lam_hi * order
+
+
+def test_fundamental_band_is_identity_at_the_fundamental():
+    assert fundamental_band(700e-9, 900e-9, 1.0) == (700e-9, 900e-9)
+
+
+@pytest.mark.parametrize(
+    ("lo", "hi", "order", "match"),
+    [
+        (900e-9, 700e-9, 2.0, "lambda_min < lambda_max"),
+        (-1e-9, 700e-9, 2.0, "lambda_min < lambda_max"),
+        (300e-9, 400e-9, 0.0, "omega0_scale must be positive"),
+        (100e-9, 3000e-9, 3.0, "too broad"),
+    ],
+)
+def test_fundamental_band_rejects_bad_input(lo, hi, order, match):
+    with pytest.raises(ValueError, match=match):
+        fundamental_band(lo, hi, order)

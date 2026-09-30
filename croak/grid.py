@@ -29,7 +29,14 @@ from numpy.typing import ArrayLike, NDArray
 
 from .constants import C
 
-__all__ = ["Grid", "raw_fft", "raw_ifft", "gridparams_omega", "gridparams_lambda"]
+__all__ = [
+    "Grid",
+    "raw_fft",
+    "raw_ifft",
+    "gridparams_omega",
+    "gridparams_lambda",
+    "fundamental_band",
+]
 
 
 def raw_fft(x: NDArray[np.complexfloating]) -> NDArray[np.complex128]:
@@ -187,4 +194,77 @@ def gridparams_lambda(
     omega_max = 2.0 * np.pi * C / lambda_min
     return gridparams_omega(
         trange, omega_min=omega_min, omega_max=omega_max, omega0=omega0
+    )
+
+
+def fundamental_band(
+    lambda_min: float, lambda_max: float, omega0_scale: float
+) -> tuple[float, float]:
+    r"""Fundamental wavelength band whose retrieval grid holds a harmonic trace.
+
+    The retrieval grid is built from the *fundamental* band
+    ``(lam_min, lam_max)``, centred on its midpoint frequency :math:`\omega_0`
+    (:func:`gridparams_omega`). The trace is placed on the same baseband axis
+    around the signal carrier :math:`n\omega_0`, where :math:`n` is
+    ``omega0_scale``, so it gets **the same angular-frequency span**. A trace
+    occupying :math:`[\Omega_a, \Omega_b]` therefore needs
+
+    .. math::
+        \omega_0 = \frac{\Omega_a + \Omega_b}{2n}, \qquad
+        \omega_{\min,\max} = \omega_0 \mp \frac{\Omega_b - \Omega_a}{2}.
+
+    Simply dividing the trace wavelengths by :math:`n` instead would shrink the
+    span by :math:`n` and crop a harmonic trace, whose spectrum is broader than
+    the fundamental's.
+
+    Parameters
+    ----------
+    lambda_min, lambda_max : float
+        Wavelength extent of the *trace* (m), ``0 < lambda_min < lambda_max``.
+    omega0_scale : float
+        Harmonic order of the signal carrier
+        (:attr:`croak.interactions.Interaction.omega0_scale`): 2 for SHG, 3 for
+        THG, 1 for PG/SD (for which the band is returned unchanged). Must be
+        positive.
+
+    Returns
+    -------
+    tuple of float
+        ``(lam_min, lam_max)`` of the fundamental band (m).
+
+    Raises
+    ------
+    ValueError
+        If the wavelengths are not positive and ascending, ``omega0_scale`` is not
+        positive, or the trace is too broad for any fundamental band (its span
+        exceeds its centre frequency divided by ``omega0_scale``, which would put
+        the band's lower edge at or below zero frequency).
+
+    Examples
+    --------
+    >>> lo, hi = fundamental_band(240e-9, 300e-9, 3.0)
+    >>> round(lo * 1e9), round(hi * 1e9)
+    (600, 1200)
+    >>> fundamental_band(700e-9, 900e-9, 1.0) == (700e-9, 900e-9)
+    True
+    """
+    if not 0.0 < lambda_min < lambda_max:
+        raise ValueError(
+            f"need 0 < lambda_min < lambda_max, got {lambda_min!r}, {lambda_max!r}"
+        )
+    if omega0_scale <= 0.0:
+        raise ValueError(f"omega0_scale must be positive, got {omega0_scale!r}")
+    if omega0_scale == 1.0:
+        return lambda_min, lambda_max
+    omega_a = 2.0 * np.pi * C / lambda_max  # lowest trace frequency
+    omega_b = 2.0 * np.pi * C / lambda_min  # highest trace frequency
+    omega0 = 0.5 * (omega_a + omega_b) / omega0_scale
+    half_span = 0.5 * (omega_b - omega_a)
+    if half_span >= omega0:
+        raise ValueError(
+            "the trace is too broad for a fundamental band at this harmonic order: "
+            "its lower edge would reach zero frequency"
+        )
+    return 2.0 * np.pi * C / (omega0 + half_span), 2.0 * np.pi * C / (
+        omega0 - half_span
     )

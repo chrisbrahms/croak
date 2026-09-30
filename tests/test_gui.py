@@ -178,6 +178,8 @@ def test_synthetic_thg_trace_mirrors_a_tripled_spectrum_and_predicts(qtbot):
     assert pred["centroid_nm"] == pytest.approx(800.0 / 3.0, abs=5.0)
     w.state.stage = 3  # regrid onto the tripled-carrier window
     assert w.state.tracedata is not None
+    # the seeded band spans the whole (broad) THG trace, so nothing is tapered off
+    assert w.state.tracedata.taper_loss < 0.01
 
 
 def test_load_stage_offers_every_interaction(qtbot):

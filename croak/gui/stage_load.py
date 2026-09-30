@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from .. import io
+from ..grid import fundamental_band
 from ..interactions import INTERACTIONS, get_interaction
 from ..plotting import cmap_white, signed_pcolormesh
 from ..session.pipeline import assemble_load_data
@@ -108,11 +109,14 @@ def compute_preproc_defaults(data) -> PreprocParams:
     pp.lamm_min_nm, pp.lamm_max_nm = lmin, lmax
     pp.lamm_bound_min_nm, pp.lamm_bound_max_nm = lmin, lmax
 
-    # retrieval grid λ: default to the trace extents × ω0 scaling (= fundamental
-    # range). Bounds stay generous so the user can widen the grid if needed.
+    # retrieval grid λ: default to the fundamental band whose grid spans the
+    # whole trace (identity for PG/SD; for SHG/THG the harmonic trace is broader
+    # than the fundamental, see croak.grid.fundamental_band). Bounds stay generous
+    # so the user can widen the grid if needed.
     scale = get_interaction(data["interaction"]).omega0_scale
-    pp.lam_min_nm = float(np.floor(lmin * scale))
-    pp.lam_max_nm = float(np.ceil(lmax * scale))
+    band_lo, band_hi = fundamental_band(lmin * 1e-9, lmax * 1e-9, scale)
+    pp.lam_min_nm = float(np.floor(band_lo / 1e-9))
+    pp.lam_max_nm = float(np.ceil(band_hi / 1e-9))
     pp.lam_bound_min_nm = max(50.0, 0.5 * pp.lam_min_nm)
     pp.lam_bound_max_nm = min(6000.0, 1.5 * pp.lam_max_nm)
     return pp
