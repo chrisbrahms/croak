@@ -107,16 +107,17 @@ order $n$ = `omega0_scale` needs
 ```
 
 since {func}`~croak.grid.gridparams_omega` centres the grid on the midpoint of
-the band:
+the band. {func}`~croak.grid.fundamental_band` does the mapping:
 
 ```python
-C = 299_792_458.0
-n = croak.get_interaction("thg").omega0_scale
-Om_a, Om_b = 2 * np.pi * C / lam_trace_max, 2 * np.pi * C / lam_trace_min
-omega0 = (Om_a + Om_b) / (2 * n)
-half = (Om_b - Om_a) / 2
-lam_min, lam_max = 2 * np.pi * C / (omega0 + half), 2 * np.pi * C / (omega0 - half)
+scale = croak.get_interaction("thg").omega0_scale
+lam_min, lam_max = croak.fundamental_band(lam_trace_min, lam_trace_max, scale)
 ```
+
+Dividing the trace wavelengths by the order instead (the tempting shortcut)
+shrinks the frequency span by that factor and crops exactly the broad wings
+that make the harmonic trace wider than the fundamental. The GUI seeds its
+preprocess band with {func}`~croak.grid.fundamental_band` for this reason.
 
 For a 10 fs, 800 nm pulse with some GDD and TOD, the THG trace needs a
 fundamental band of roughly **550–1300 nm**. A band cut at 660–990 nm, which

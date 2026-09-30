@@ -18,6 +18,11 @@ semantic versioning.
   harmonic geometry that excludes the fundamental spectrum, which it then
   blanked, so the stage drew no prediction for SHG. It now spans the trace and
   the independent spectrum.
+- **The GUI cropped harmonic traces with its default retrieval band.** The
+  preprocess band was seeded as the trace wavelengths times the harmonic order.
+  That shrinks the frequency span by the order and tapered away 22 % of a
+  synthetic THG trace, and a smaller share of an SHG one. It is now seeded with
+  `croak.fundamental_band`.
 - **`predicted_marginal` treated any unrecognised geometry as SD.** A geometry
   without a marginal model now raises a `ValueError`.
 - **The SD soft-centroid condition was overstated.** The docs said the SD
@@ -63,6 +68,8 @@ semantic versioning.
   - **Direction of time:** THG fixes it in general, but a linearly chirped
     Gaussian gives a delay-symmetric trace, so its GDD sign is undetermined.
     This is documented and tested.
+  - **Band sizing:** `croak.fundamental_band` maps a harmonic trace's wavelength
+    extent to the fundamental retrieval band whose grid holds the whole trace.
   - **Documentation:** the interactions, gradients and marginals pages cover
     THG. The grids how-to explains how to size the retrieval band from a
     harmonic trace. A new tutorial is at `docs/tutorials/06_thg_frog.md`.

@@ -211,17 +211,17 @@ print(f"700–920 nm band: the edge taper removes {naive.taper_loss:.0%} of the 
 Instead, read the trace's edges off its marginal and map them back, as described
 in [Grids and filtering](../howto/grids_and_filtering.md#sizing-the-band-for-a-harmonic-trace).
 The trace window is centred on $n\omega_0$ with the band's full width, so
-$\omega_0 = (\Omega_a+\Omega_b)/2n$ and the band is $\omega_0 \mp (\Omega_b-\Omega_a)/2$:
+$\omega_0 = (\Omega_a+\Omega_b)/2n$ and the band is $\omega_0 \mp (\Omega_b-\Omega_a)/2$.
+{func}`~croak.grid.fundamental_band` does that mapping:
 
 ```{code-cell} ipython3
 marg = np.clip(meas.sum(axis=1), 0, None)
 edge = np.where(marg > 3e-3 * marg.max())[0]       # above this trace's noise floor
-Om_a, Om_b = wlfreq(lam[edge[-1]]), wlfreq(lam[edge[0]])
-omega0_band = (Om_a + Om_b) / (2 * scale)
-half = (Om_b - Om_a) / 2
-lam_min, lam_max = wlfreq(omega0_band + half), wlfreq(omega0_band - half)
-print(f"trace spans {wlfreq(Om_b) / 1e-9:.0f}–{wlfreq(Om_a) / 1e-9:.0f} nm "
-      f"-> fundamental band {lam_min / 1e-9:.0f}–{lam_max / 1e-9:.0f} nm")
+lam_trace_min, lam_trace_max = lam[edge[0]], lam[edge[-1]]
+lam_min, lam_max = croak.fundamental_band(lam_trace_min, lam_trace_max, scale)
+print(f"trace spans {lam_trace_min / 1e-9:.0f}–{lam_trace_max / 1e-9:.0f} nm "
+      f"-> fundamental band {lam_min / 1e-9:.0f}–{lam_max / 1e-9:.0f} nm "
+      f"(not {3 * lam_trace_min / 1e-9:.0f}–{3 * lam_trace_max / 1e-9:.0f} nm)")
 
 td = croak.load_and_clean(meas, lam, delays, "thg",
                           lam_min=lam_min, lam_max=lam_max, input_unit="delay",
