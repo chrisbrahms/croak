@@ -39,6 +39,7 @@ The geometry sets which anchors are rigorous:
 | `"shg"` | `2·ω̄_S` (hard) | `√2·σ_S` (hard) | `None` |
 | `"pg"` / `"tg"` | `ω̄_S` (hard) | TL `σ_TL` | `(σ_S, σ_TL)` |
 | `"sd"` | `≈ ω̄_S` (TL/soft) | `> σ_S` | `(σ_S, None)` |
+| `"thg"` | `≈ 3·ω̄_S` (TL/soft) | `> σ_S` | `(σ_S, None)` |
 
 Use {func}`~croak.marginal_checks.predicted_centroid` if you only need the centroid
 anchor, and {func}`~croak.marginal_checks.spectral_autoconvolution` for the raw
@@ -68,8 +69,13 @@ Interpreting a mismatch:
 - **PG / TG** — the centroid is still a hard calibration check; a width below
   `σ_S` means spectral clipping or detector roll-off, above `σ_TL` means additive
   broadband artefacts.
-- **SD** — only the width lower bound is rigorous; the centroid holds at TL or for
-  a temporally symmetric pulse.
+- **SD** — only the width lower bound is rigorous. The centroid holds when the
+  instantaneous frequency is odd about a symmetric intensity profile, e.g. a
+  symmetric spectrum at TL or linearly chirped. A symmetric intensity alone is
+  not enough (see [Marginals](../explanation/marginals.md)).
+- **THG** — the same soft anchors as SD, on the tripled axis: only the width
+  lower bound is rigorous, and the `3·ω̄_S` centroid holds under the same
+  condition as SD's.
 
 Restrict the moments and the shape comparison to a spectral **trust region** so
 out-of-band detector noise — amplified by any efficiency tilt — cannot dominate.

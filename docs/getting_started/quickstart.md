@@ -71,7 +71,7 @@ res = croak.retrieve(trace, g.omega, delays, "pg", algorithm="copra",
 ```
 
 Dispersive propagation is available for the **PG** and **SD** interactions (whose
-signal stays at the fundamental frequency), not **SHG**.
+signal stays at the fundamental frequency), not **SHG** or **THG**.
 
 ## Initial guesses
 

@@ -54,7 +54,7 @@ for everything the closed-form adjoint does not cover:
 - the residual Jacobian that Levenberg–Marquardt and the Laplace covariance need,
 - a new interaction, differentiated before any adjoint is derived for it.
 
-For the core model — all three interactions, thin or dispersive, pointwise
+For the core model — all four interactions, thin or (PG/SD) dispersive, pointwise
 parameterisation, standard penalties — croak also carries a hand-derived
 **Wirtinger adjoint**, so {class}`~croak.copra.COPRA` and
 {class}`~croak.lbfgs.LBFGS` run in pure NumPy with no JAX on the hot path. The
@@ -65,13 +65,13 @@ Further reading: [Gradients](../explanation/gradients.md).
 
 ## Forward model
 
-- **Interactions** — SHG, SD and PG (the transient-grating/TG-FROG kernel), each
+- **Interactions** — SHG, THG, SD and PG (the transient-grating/TG-FROG kernel), each
   with a closed-form adjoint, extensible by subclassing
   {class}`~croak.interactions.Interaction`.
 - **Dispersive propagation** — a Gauss–Legendre depth integral through a material
   slab, propagating both the input replicas and the generated signal. Available
-  on every solver, for PG and SD (the SHG signal is not at the fundamental
-  frequency). The thin medium is the same code path with zero thickness and one
+  on every solver, for PG and SD (the SHG and THG signals are not at the
+  fundamental frequency). The thin medium is the same code path with zero thickness and one
   quadrature node.
 - **Geometric time smearing** — {mod}`croak.smearing` reduces the transverse
   integral over a non-collinear focal spot exactly to two scalars: a

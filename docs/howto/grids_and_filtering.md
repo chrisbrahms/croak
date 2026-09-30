@@ -1,7 +1,7 @@
-# Grids, wavelength ranges and the SHG carrier
+# Grids, wavelength ranges and the harmonic carrier
 
 Getting the grid and wavelength ranges right is the most common source of
-confusion in FROG retrieval — especially for SHG, whose trace lives at a
+confusion in FROG retrieval — especially for SHG and THG, whose traces live at a
 *different* carrier than the pulse. This guide collects the rules.
 
 ## Three domains
@@ -53,7 +53,7 @@ So a 2.5 fs pulse at 800 nm and the same envelope at 250 nm share the same
 baseband `omega`; they differ only in `omega0`. See
 [Conventions](../reference/conventions.md).
 
-## The SHG carrier doubling
+## The harmonic carrier (SHG doubling, THG tripling)
 
 Each [interaction](../explanation/interactions.md) records where its signal sits
 via `omega0_scale`:
@@ -61,6 +61,7 @@ via `omega0_scale`:
 | Interaction | `omega0_scale` | Trace carrier |
 |-------------|----------------|---------------|
 | SHG | 2.0 | $2\omega_0$ (≈ half the fundamental wavelength) |
+| THG | 3.0 | $3\omega_0$ (≈ a third of the fundamental wavelength) |
 | SD, PG | 1.0 | $\omega_0$ (same band as the fundamental) |
 
 `load_and_clean` uses this automatically: it builds the pulse grid from
@@ -82,6 +83,53 @@ td = croak.load_and_clean(Ifrog, lam_frog, delays, "shg",
 `td.omega0_pulse` is the fundamental carrier; `td.omega0_trace = 2 * omega0_pulse`
 is where the measured trace lives. For PG/SD the two coincide.
 :::
+
+### Sizing the band for a harmonic trace
+
+The pulse and the trace share one baseband grid. The trace is placed on
+`grid.omega + omega0_scale * omega0_pulse`, so it gets **the same angular-frequency
+span** $W=\omega_\text{max}-\omega_\text{min}$ as the fundamental band. A
+harmonic signal, however, is **broader** than the fundamental. Its spectral
+support is up to `omega0_scale` times wider (the product of two or three copies
+of the field convolves their spectra), and for a transform-limited Gaussian its
+RMS width is $\sqrt2$ (SHG) or $\sqrt3$ (THG) times the fundamental's. A band
+that just hugs the fundamental spectrum therefore **crops the trace**, and
+{attr}`TraceData.taper_loss <croak.preprocess.TraceData.taper_loss>` warns.
+
+Size the band from the *trace* instead. If the trace marginal lives on
+$[\Omega_a,\Omega_b]$ (rad/s, read at about 1e-4 of its peak), a harmonic of
+order $n$ = `omega0_scale` needs
+
+```{math}
+\omega_0 = \frac{\Omega_a+\Omega_b}{2n},
+\qquad
+\omega_{\text{min},\text{max}} = \omega_0 \mp \frac{\Omega_b-\Omega_a}{2},
+```
+
+since {func}`~croak.grid.gridparams_omega` centres the grid on the midpoint of
+the band:
+
+```python
+C = 299_792_458.0
+n = croak.get_interaction("thg").omega0_scale
+Om_a, Om_b = 2 * np.pi * C / lam_trace_max, 2 * np.pi * C / lam_trace_min
+omega0 = (Om_a + Om_b) / (2 * n)
+half = (Om_b - Om_a) / 2
+lam_min, lam_max = 2 * np.pi * C / (omega0 + half), 2 * np.pi * C / (omega0 - half)
+```
+
+For a 10 fs, 800 nm pulse with some GDD and TOD, the THG trace needs a
+fundamental band of roughly **550–1300 nm**. A band cut at 660–990 nm, which
+already covers the whole fundamental spectrum, still loses 6 % of the trace to
+the taper and leaves the retrieval an order of magnitude worse. The
+[THG-FROG tutorial](../tutorials/06_thg_frog.md) walks through this.
+
+The same span also has to hold the harmonic signal of the *retrieved* field,
+because the forward model forms $E^2G$ on the periodic grid. A fundamental
+spectrum that fills more than about $1/n$ of the grid would wrap its harmonic
+round the FFT window. croak does not check this. Sizing the band from the trace
+as above keeps it satisfied automatically, because the fundamental then fills
+only a fraction of the grid.
 
 :::{admonition} Choose the band on a log scale, not a linear one
 :class: important
@@ -160,7 +208,8 @@ constrains the retrieval itself rather than filtering its output.
 
 ## Checklist
 
-- Pass the **fundamental** wavelength band as `lam_min`/`lam_max`, even for SHG.
+- Pass the **fundamental** wavelength band as `lam_min`/`lam_max`, even for SHG
+  and THG — and for those, size it from the trace's frequency span (see above).
 - Make the band a little wider than the visible signal so the taper has room.
 - Set `omega0` on dispersive solvers (or let `retrieve_from_tracedata` take it
   from `td.omega0_pulse`).

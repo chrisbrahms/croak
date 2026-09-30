@@ -51,7 +51,7 @@ in the deep ultraviolet.
 Passing `material`, `thickness`, `npoints` and the carrier `omega0` to
 {func}`~croak.maketrace` models the propagation of both the input and the signal
 fields inside the slab. We use the **PG** interaction (the transient-grating
-kernel); dispersive propagation is supported for PG and SD, not SHG.
+kernel); dispersive propagation is supported for PG and SD, not SHG or THG.
 
 Fifty micrometres is a *thin* window by any normal standard — a fifth the
 thickness of a microscope coverslip:

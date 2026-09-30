@@ -245,8 +245,10 @@ def predicted_centroid(
     :math:`2\bar\omega_S` for SHG (the marginal sits on the doubled axis),
     :math:`3\bar\omega_S` for THG (the tripled axis) and :math:`\bar\omega_S` for
     PG/TG/SD (the marginal sits at the fundamental). For SHG and PG/TG this is a
-    hard, phase-independent check; for SD and THG it holds only for a
-    transform-limited or temporally symmetric pulse.
+    hard, phase-independent check. For SD and THG it is soft: it holds when the
+    instantaneous frequency is odd about a symmetric intensity profile (e.g. a
+    symmetric spectrum at TL, or any linear chirp of one), and only
+    approximately otherwise.
 
     Parameters
     ----------

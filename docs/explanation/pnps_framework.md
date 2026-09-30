@@ -92,9 +92,11 @@ carries *trivial ambiguities* that retrieval cannot resolve from the trace alone
 - for SHG-FROG, the **direction of time** ($E(t) \to E^*(-t)$).
 
 croak's results inherit these: compare retrieved pulses up to a constant phase and
-a time shift. Some geometries (SD, PG, TG) break the time-reversal ambiguity.
-*Non-trivial* ambiguities (genuinely distinct pulses with the same trace) are
-rare for well-sampled traces and are the reason retrieval is run from several
+a time shift. Some geometries (SD, PG, TG, THG) break the time-reversal
+ambiguity. *Non-trivial* ambiguities (genuinely distinct pulses with the same
+trace) are rare for well-sampled traces — one notable exception is THG-FROG,
+whose trace cannot tell the sign of a pure linear chirp on a Gaussian pulse (see
+[Interactions](interactions.md#thg-frog)) — and are the reason retrieval is run from several
 [random restarts](../howto/solver_selection.md).
 
 ## Beyond FROG
@@ -103,7 +105,8 @@ Because the only geometry-specific ingredient is the signal operator
 $S_\delta$, the framework extends to any parameterised nonlinear process — d-scan
 (where $\delta$ is inserted glass), TDP (where $\delta$ is a ptychographic
 position), and others — by swapping the operator while reusing the same
-least-squares machinery. croak currently ships the three FROG kernels above.
+least-squares machinery. croak currently ships four FROG kernels: the three above
+and third-harmonic generation ([Interactions](interactions.md)).
 
 ## Further reading
 

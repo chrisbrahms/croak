@@ -21,7 +21,7 @@ and phase.**
 croak reconstructs the full complex electric field of an ultrashort pulse from
 a delay-scanned nonlinear-process spectrum. It is a general retrieval package
 for the PNPS (parameterised nonlinear process spectra) class of measurements,
-currently focused on FROG: the SHG, SD and PG/transient-grating geometries,
+currently focused on FROG: the SHG, THG, SD and PG/transient-grating geometries,
 ten solvers over a single physical forward model, and the workflow around them
 — loading, cleaning, retrieval, post-processing, uncertainty, plotting and
 saving. The library is headless (NumPy/SciPy/JAX); a PyQt6 GUI is optional.
@@ -185,7 +185,7 @@ argument over a single forward model, so changing solver changes nothing else.
 | `"cma-es"` | none (global) | escaping a bad local minimum with no good guess |
 | `"copra-jax"`, `"lbfgs-hand"`, `"lbfgs-optx"`, `"lm-optx"` | | on-device variants of the above |
 
-For the core model — all three interactions, thin or dispersive medium — croak
+For the core model — all four interactions, thin or (PG/SD) dispersive medium — croak
 also carries a hand-derived Wirtinger adjoint: exact closed-form gradients used
 to verify the automatic differentiation (the two routes agree to ~1e-6 on every
 supported combination). The AD route carries everything else, including the
@@ -210,7 +210,7 @@ are in the
 croak is built on the PNPS formalism: the same mathematics describes
 frequency-resolved optical gating, time-domain ptychography, cross-correlation
 FROG and dispersion scan, differing only in the signal operator. croak ships
-the three FROG kernels today; the scan parameter is a delay throughout.
+four FROG kernels today; the scan parameter is a delay throughout.
 Because the interaction is the only geometry-specific ingredient, adding
 another PNPS technique means supplying a `signal` method — automatic
 differentiation covers the gradient. XFROG, TDP and d-scan are the natural

@@ -143,7 +143,7 @@ exactly unchanged by $E(t) \to E^*(-t)$, so a pulse and its mirror image fit it
 equally well and the solver returns whichever it happened to find. When the true
 pulse is known, {func}`~croak.resolve_time_direction` picks the matching branch —
 without it a perfect retrieval can appear mirrored against the truth, and the sign
-of the reported GDD is a coin toss. It is a no-op for PG and SD.
+of the reported GDD is a coin toss. It is a no-op for PG, SD and THG.
 
 ```{code-cell} ipython3
 truth = croak.TruthPulse.from_spectrum(g, ew, omega0)

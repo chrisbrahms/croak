@@ -182,7 +182,7 @@ It compares **temporal intensity** profiles by their best normalised
 cross-correlation over all lags, which keeps the decision independent of the
 absolute phase and the time origin (both ambiguous too) and reliable on an
 imperfect retrieval — only the *relative* ranking of the two branches has to be
-right. It is a no-op for PG and SD, which fix the direction of time, and on a
+right. It is a no-op for PG, SD and THG, which fix the direction of time, and on a
 near-symmetric pulse where the two branches score alike.
 
 Reversal is applied by conjugating the spectrum, which is exact: the stored trace,

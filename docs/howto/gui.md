@@ -122,7 +122,7 @@ and hand the trace straight to the marginal-check stage.
    that loaded as (delay × wavelength), and **Reverse delay axis** flips the
    delay-sign convention — negating the scan axis, so the trace is mirrored about
    τ = 0. Which end of a stage scan is "gate late" is a wiring convention the
-   file does not record. It matters for **PG and SD**, whose kernels fix the
+   file does not record. It matters for **PG, SD and THG**, whose kernels fix the
    direction of time: a wrong setting there time-reverses the retrieved pulse and
    flips the sign of every phase order (invisible on a symmetric
    transform-limited pulse, so check it against a known chirp). An **SHG** trace

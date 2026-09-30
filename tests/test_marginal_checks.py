@@ -134,6 +134,34 @@ def test_thg_prediction_matches_simulated_trace_marginal(gdd):
         np.testing.assert_allclose(measured / measured.max(), on_grid, atol=1e-3)
 
 
+@pytest.mark.parametrize(("interaction", "order"), [("sd", 1.0), ("thg", 3.0)])
+def test_soft_centroid_needs_odd_instantaneous_frequency(interaction, order):
+    """The SD/THG centroid anchor holds for a linear chirp, not for any phase.
+
+    Both marginals carry |F{E^2}|^2, whose centroid is the |E|^4-weighted mean
+    instantaneous frequency, against the |E|^2-weighted one of S. They agree when
+    phi'(t) is odd about a symmetric intensity (linear chirp) but not for a
+    symmetric intensity with an even phi'(t) (cubic temporal phase).
+    """
+    g = Grid(1024, dt=0.2e-15)
+    envelope = np.exp(-0.5 * (g.t / 6e-15) ** 2)
+    delays = np.arange(-150e-15, 150e-15, 0.4e-15)
+
+    def offset(field):
+        ew = g.fft(field.astype(complex))
+        marginal = maketrace(g.omega, delays, ew, interaction, normalize=False)
+        c_marg = mc.centroid(g.omega, marginal.sum(axis=1))
+        spectrum = np.abs(ew) ** 2
+        return (c_marg - order * mc.centroid(g.omega, spectrum)) / mc.rms_width(
+            g.omega, spectrum
+        )
+
+    assert offset(envelope * np.exp(1j * (g.t / 5e-15) ** 2)) == pytest.approx(
+        0.0, abs=1e-6
+    )
+    assert abs(offset(envelope * np.exp(1j * (g.t / 6e-15) ** 3))) > 0.3
+
+
 def test_tg_is_identical_to_pg(gaussian_spectrum):
     omega, s, _, _ = gaussian_spectrum
     tg = mc.predicted_marginal(omega, s, "TG")

@@ -44,7 +44,7 @@ FROG
   the canonical PNPS technique.
 
 Interaction / geometry
-: the nonlinear process defining the signal $s(E,G)$ — SHG, SD or PG in croak. See
+: the nonlinear process defining the signal $s(E,G)$ — SHG, THG, SD or PG in croak. See
   [Interactions](../explanation/interactions.md).
 
 TG-FROG

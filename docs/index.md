@@ -9,7 +9,7 @@ sd_hide_title: true
 
 **croak** retrieves the complex electric field of an ultrashort laser pulse — full
 spectral amplitude *and* phase — from a delay-scanned nonlinear-process spectrum.
-It ships the three FROG geometries (SHG, SD and PG/transient-grating), ten
+It ships four FROG geometries (SHG, THG, SD and PG/transient-grating), ten
 solvers over a single physical model, and the whole workflow around them: loading,
 cleaning, retrieval, post-processing, uncertainty, plotting and saving. The core
 is a headless Python library built on NumPy, SciPy and JAX; the GUI is optional.
@@ -105,7 +105,7 @@ A PyQt6 wizard that drives the whole library — load, retrieve, tune, save.
   Laplace covariance, and any new interaction, with no adjoint derivation
   needed.
 - **A hand-derived adjoint where it applies.** For the core model —
-  all three interactions, thin or dispersive — croak also carries an exact
+  all four interactions, thin or (PG/SD) dispersive — croak also carries an exact
   Wirtinger adjoint, so {class}`~croak.copra.COPRA` and {class}`~croak.lbfgs.LBFGS`
   run in pure NumPy. The two routes are cross-checked to ~1e-6.
 - **On-device execution.** {class}`~croak.copra_jax.COPRAJax`,
@@ -120,7 +120,7 @@ A PyQt6 wizard that drives the whole library — load, retrieve, tune, save.
   with a Gauss–Legendre depth integral — needed for accurate DUV/VUV retrieval —
   with materials from the built-in Sellmeier set, your own `n(λ)`, the
   refractiveindex.info database, or **chirped mirrors**.
-- **Three geometries.** SHG, SD and PG (the PG kernel is the transient-grating /
+- **Four geometries.** SHG, THG, SD and PG (the PG kernel is the transient-grating /
   TG-FROG signal).
 - **The whole workflow as a library.** Loading, cleaning, regridding,
   post-processing, dispersion tuning, plotting and saving — all callable without

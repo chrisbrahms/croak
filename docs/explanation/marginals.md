@@ -68,6 +68,7 @@ top two rows. Among the common geometries that is **SHG only**.
 | SHG | $E$ | $E$ | $S * S$ | **yes** | $2\bar\omega_S$ |
 | PG  | $E$ | $\lvert E\rvert^2$ | $S * \lvert\widehat{\lvert E\rvert^2}\rvert^2$ | no | $\bar\omega_S$ |
 | SD  | $E^2$ | $E^\ast$ | $\lvert\widehat{E^2}\rvert^2 * S(-\omega)$ | no | $\approx\bar\omega_S$ |
+| THG | $E^2$ | $E$ | $\lvert\widehat{E^2}\rvert^2 * S$ | no | $\approx 3\bar\omega_S$ |
 | TG  | $E$ | $\lvert E\rvert^2$ | same as PG | no | $\bar\omega_S$ |
 
 ```{admonition} TG-FROG ≡ PG
@@ -170,10 +171,16 @@ How the three PG checks carry over:
   $S(-\omega)$. Same soft-check status as PG.
 - **Centroid — weaker.**
   $\bar\omega[M_\mathrm{SD}] = \bar\omega[\,|\widehat{E^2}|^2\,] - \bar\omega_S$.
-  The SHG-spectrum centroid is *not* generally $2\bar\omega_S$; it coincides at TL
-  and, more generally, for a **temporally symmetric intensity**. For asymmetric
-  chirped pulses the SD marginal centroid drifts off $\bar\omega_S$, so treat
-  "centred at the fundamental" as a TL/symmetric anchor, not a hard check
+  The SHG-spectrum centroid is *not* generally $2\bar\omega_S$. Writing $E(t)=|E|e^{i\phi(t)}$, the SHG-spectrum centroid (about $2\omega_0$)
+  is $2\langle\phi'\rangle_{|E|^4}$, twice the instantaneous frequency averaged
+  with weight $|E|^4$, whereas $\bar\omega_S-\omega_0=\langle\phi'\rangle_{|E|^2}$.
+  The two averages agree when $\phi'$ is constant. They also agree when $\phi'$
+  is **odd about a symmetric intensity profile**, which covers a flat-phase pulse
+  with a symmetric spectrum and any linear chirp of one. A symmetric intensity
+  alone is *not* enough: a symmetric pulse with a cubic temporal phase moves the
+  centroid by ~0.7 $\sigma_S$. Even a transform-limited pulse with an asymmetric
+  spectrum is off by a few per cent of $\sigma_S$.
+  So treat "centred at the fundamental" as a TL/symmetric anchor, not a hard check
   ({attr}`~croak.marginal_checks.MarginalPrediction.centroid_is_hard` is `False`).
 - **Width — messier.** Only the lower bound $\sigma[M_\mathrm{SD}] > \sigma_S$ is
   rigorous; the SHG-spectrum width depends on phase non-monotonically (for a
@@ -185,14 +192,42 @@ How the three PG checks carry over:
   $M_\mathrm{SD} = (\text{measured SHG spec}) * S(-\omega)$ is then a fully
   phase-independent prediction, recovering an SHG-grade check for the SD trace.
 
+## THG — SD's anchors on the tripled axis
+
+```{math}
+M_\mathrm{THG}(\omega) = \bigl(\lvert\widehat{E^2}\rvert^2 * S\bigr)(\omega).
+```
+
+The signal is $E_\mathrm{sig}=E(t)^2\,E(t-\tau)$. The undelayed factor is again
+$E^2$, whose spectral intensity is the phase-dependent SHG spectrum. The gate is
+the field itself, unconjugated, so it contributes $S(\omega)$ rather than SD's
+mirrored $S(-\omega)$. The marginal therefore sits near the **third harmonic**,
+and the checks carry over from SD:
+
+- **TL predicted marginal** — $|\widehat{E_\mathrm{TL}^2}|^2 * S$. For a Gaussian
+  spectrum it has RMS width exactly $\sqrt3\,\sigma_S$. It is a soft check.
+- **Centroid — soft.**
+  $\bar\omega[M_\mathrm{THG}] = \bar\omega[\,|\widehat{E^2}|^2\,] + \bar\omega_S$,
+  which equals $3\bar\omega_S$ under exactly SD's condition: the instantaneous
+  frequency is odd about a symmetric intensity profile. That includes a linearly
+  chirped Gaussian but not a symmetric pulse with a cubic temporal phase.
+- **Width — lower bound only.** $\sigma[M_\mathrm{THG}] > \sigma_S$ holds for any
+  pulse. As for SD, `width_bracket = (σ_S, None)`.
+- **Bonus check.** An independently measured SHG spectrum plugged in for
+  $|\widehat{E^2}|^2$ makes the THG prediction phase-independent too.
+
+Because the THG signal is in the UV, the spectrometer's response is the usual
+culprit when these anchors fail. Check the centroid against $3\bar\omega_S$
+before trusting a retrieved chirp.
+
 ## What to compute, by process
 
-| check | SHG | PG / TG | SD |
-|---|---|---|---|
-| predicted marginal from $S$ alone | exact | TL only | TL only (or via measured SHG spec) |
-| centroid | $2\bar\omega_S$ (hard) | $\bar\omega_S$ (hard) | $\approx\bar\omega_S$ at TL/symmetric (soft) |
-| width | $\sqrt2\,\sigma_S$ (hard) | bracket $[\sigma_S,\ \sigma_\mathrm{TL}]$ | $>\sigma_S$; TL estimate (weak) |
-| nature of a mismatch | trace error only | trace error or non-TL phase | trace error or phase |
+| check | SHG | PG / TG | SD | THG |
+|---|---|---|---|---|
+| predicted marginal from $S$ alone | exact | TL only | TL only (or via measured SHG spec) | TL only (or via measured SHG spec) |
+| centroid | $2\bar\omega_S$ (hard) | $\bar\omega_S$ (hard) | $\approx\bar\omega_S$ at TL/symmetric (soft) | $\approx 3\bar\omega_S$ at TL/symmetric (soft) |
+| width | $\sqrt2\,\sigma_S$ (hard) | bracket $[\sigma_S,\ \sigma_\mathrm{TL}]$ | $>\sigma_S$; TL estimate (weak) | $>\sigma_S$; TL estimate (weak) |
+| nature of a mismatch | trace error only | trace error or non-TL phase | trace error or phase | trace error or phase |
 
 ## Practical points
 
@@ -201,14 +236,15 @@ How the three PG checks carry over:
   and detector gain. {func}`~croak.marginal_checks.predicted_marginal` returns a
   peak-normalised marginal.
 - Compare on a **common, calibrated frequency axis**: the SH axis for SHG, the
-  fundamental axis for PG/TG/SD. A centroid mismatch on that axis *is* the
+  TH axis for THG, the fundamental axis for PG/TG/SD. A centroid mismatch on that axis *is* the
   calibration check.
 - The width and centroid checks are robust to additive noise; the full-shape
   overlay is the most sensitive to scatter and detector nonlinearity but also the
-  most affected by the TL assumption for PG/SD. Restrict the moments and the
+  most affected by the TL assumption for PG/SD/THG. Restrict the moments and the
   normalisation to a **spectral trust region** (in the GUI, 190–1000 nm for a
-  measured trace, or the full loaded range for the noise-free simulated/synthetic
-  traces) so out-of-band detector noise cannot dominate.
+  measured trace, or the full loaded range — trace and independent spectrum — for
+  the noise-free simulated/synthetic traces) so out-of-band detector noise cannot
+  dominate.
 - For the rigorous SHG and PG-centroid checks, report the numeric discrepancy
   (measured vs predicted) as a QC metric alongside the retrieval error.
 
@@ -217,7 +253,7 @@ How the three PG checks carry over:
 A TG/PG detector's third-order generation/collection efficiency tilts the
 marginal by a power law $(\lambda/\mu\mathrm{m})^n$
 ({func}`croak.preprocess.third_order_scale`). Because the marginal centroid is a
-**hard** anchor for PG/TG (and the fundamental anchor for SD/SHG),
+**hard** anchor for PG/TG (and the harmonic anchor for SD/SHG/THG),
 {func}`croak.marginal_checks.auto_third_order_exponent` picks the exponent $n$
 whose corrected-marginal centroid lands on the predicted centroid. The tilt
 shifts the centroid monotonically in $n$, so the match is a unique root; it is

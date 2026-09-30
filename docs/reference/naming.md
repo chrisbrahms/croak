@@ -5,7 +5,7 @@
 *Complete* is the substantive claim. Retrieval returns the full complex field —
 amplitude *and* phase — and, in the dispersive geometries, the field as it
 propagates inside the nonlinear medium rather than a thin-medium approximation to
-it. *Adjoint kernels* names the machinery: each interaction (SHG, SD, PG)
+it. *Adjoint kernels* names the machinery: each interaction (SHG, THG, SD, PG)
 contributes a kernel to the forward map, and each carries a matching hand-derived
 [Wirtinger adjoint](../explanation/gradients.md) that yields exact gradients for
 the cost of one extra forward pass.

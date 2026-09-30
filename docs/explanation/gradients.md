@@ -59,14 +59,18 @@ $s(E, G)$. Given the output cotangent $\bar s$, each
 | Geometry | $s$ | $\bar E$ | $\bar G$ |
 |----------|-----|----------|----------|
 | SHG | $E G$ | $G^*\,\bar s$ | $E^*\,\bar s$ |
+| THG | $E^2 G$ | $2 E^* G^*\,\bar s$ | $(E^2)^*\,\bar s$ |
 | SD | $E^2 G^*$ | $2 E^*\,G\,\bar s$ | $E^2\,\bar s^*$ |
 | PG | $E\lvert G\rvert^2$ | $\lvert G\rvert^2\,\bar s$ | $2 G\,\operatorname{Re}(E^*\bar s)$ |
 
 These are the closed forms in {meth}`SHG.signal_adjoint
 <croak.interactions.SHG.signal_adjoint>`,
+{meth}`THG.signal_adjoint <croak.interactions.THG.signal_adjoint>`,
 {meth}`SD.signal_adjoint <croak.interactions.SD.signal_adjoint>` and
-{meth}`PG.signal_adjoint <croak.interactions.PG.signal_adjoint>`. SHG is
-holomorphic in both arguments; SD is holomorphic in $E$ and anti-holomorphic in
+{meth}`PG.signal_adjoint <croak.interactions.PG.signal_adjoint>`. SHG and THG are
+holomorphic in both arguments, so each cotangent is the conjugated ordinary
+derivative times $\bar s$ ($\partial(E^2G)/\partial E = 2EG$ gives the THG
+$\bar E$); SD is holomorphic in $E$ and anti-holomorphic in
 $G$; PG is real in the gate intensity — the mixed cases are exactly where naïve
 "complex derivative" intuition fails and Wirtinger bookkeeping is essential.
 
@@ -115,7 +119,7 @@ differentiable:
 ## The hand-derived adjoint — a fast specialisation
 
 For the core model croak also carries the closed-form Wirtinger adjoint derived
-above. It covers **all three interactions, thin or dispersive**, with the
+above. It covers **all four interactions, thin or (PG/SD) dispersive**, with the
 pointwise parameterisation, phase-only mode, per-frequency `R_omega` scaling and
 the amplitude/phase/spectral penalties. It does *not* cover the smearing kernel or
 the extra fitted scalars — the specialisation is in model features and
@@ -138,7 +142,7 @@ Because they check each other. The analytic adjoint is easy to get subtly wrong,
 and AD is an independent implementation of the same derivative: running `lbfgs`
 against `lbfgs-ad` on the same trace is a continuous regression test on the
 hand-derived maths. `tests/test_ad_vs_analytic.py` asserts agreement to ~1e-6
-across all three interactions, thin and dispersive, phase-only and regularised —
+across the interactions, thin and dispersive, phase-only and regularised —
 AD has no step-size truncation error, so the comparison is far sharper than a
 finite-difference check. The companion paper (see [Validation](validation.md))
 derives the complete reverse pass at tutorial density, from the definition of

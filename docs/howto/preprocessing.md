@@ -328,7 +328,7 @@ which end is "gate late" is a wiring convention — negate the delay axis:
 delays = -delays                               # mirror the trace about τ = 0
 ```
 
-The delay sign matters for PG and SD, whose kernels fix the direction of time: a
+The delay sign matters for PG, SD and THG, whose kernels fix the direction of time: a
 wrong one there time-reverses the retrieved pulse and flips the sign of every
 phase order, and it is invisible on a symmetric transform-limited pulse, so check
 it against a known chirp. An SHG trace is symmetric in delay for any pulse
