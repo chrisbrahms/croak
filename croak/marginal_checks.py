@@ -25,12 +25,16 @@ geometry:
   centroid :math:`\bar\omega_S` (exact); width in :math:`[\sigma_S, \sigma_{TL}]`.
 - **SD** — marginal :math:`|\widehat{E^2}|^2 * S(-\omega)` (transform-limited);
   centroid :math:`\approx\bar\omega_S` (TL/symmetric only); width :math:`>\sigma_S`.
+- **THG** — marginal :math:`|\widehat{E^2}|^2 * S` (transform-limited); centroid
+  :math:`\approx 3\bar\omega_S` (TL/symmetric only); width :math:`>\sigma_S`.
 
 SHG is the gold standard: its marginal is fully phase-independent, so any
 mismatch is unambiguously a *trace* problem (calibration, spectral response,
 detector nonlinearity, scatter). PG/TG keep one rigorous anchor (the centroid)
-and one rigorous lower bound (the width); SD has only soft, transform-limited
-(TL) anchors because its phase-dependent factor is the SHG spectrum.
+and one rigorous lower bound (the width); SD and THG have only soft,
+transform-limited (TL) anchors because their phase-dependent factor is the SHG
+spectrum :math:`|\widehat{E^2}|^2` (SD pairs it with the mirrored spectrum
+:math:`S(-\omega)` of its conjugated gate, THG with :math:`S(\omega)` itself).
 
 This module computes those predictions (:func:`predicted_marginal`,
 :func:`predicted_centroid`), the moments of a measured marginal
@@ -200,7 +204,7 @@ def apply_marginal_correction(
 def _transform_limited_intensity_factors(
     omega: NDArray[np.float64], spectrum: NDArray[np.float64]
 ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
-    r"""Return the PG gate and SD probe spectral factors for the TL pulse.
+    r"""Return the PG gate and SD/THG probe spectral factors for the TL pulse.
 
     Builds the transform-limited field :math:`\tilde E_\mathrm{TL} = \sqrt S`
     (flat phase), transforms to time, and forms the two phase-dependent factors
@@ -208,7 +212,9 @@ def _transform_limited_intensity_factors(
 
     * PG/TG gate: :math:`|\widehat{|E|^2}|^2` — modulus-squared FT of the
       temporal intensity, an **even** function of frequency (centroid 0).
-    * SD probe: :math:`|\widehat{E^2}|^2` — the SHG spectrum of the TL pulse.
+    * SD/THG probe: :math:`|\widehat{E^2}|^2` — the SHG spectrum of the TL
+      pulse, which both :math:`\chi^{(3)}` geometries with a squared test arm
+      share.
 
     Both are returned on the same uniform grid as ``spectrum`` (ascending,
     matching ``omega``'s spacing); only their shapes are used downstream, so the
@@ -222,7 +228,7 @@ def _transform_limited_intensity_factors(
     ew_tl = np.sqrt(np.clip(spectrum, 0.0, None)).astype(complex)
     e_t = grid.ifft(ew_tl)
     gate = np.abs(grid.fft(np.abs(e_t) ** 2)) ** 2  # |F{|E|^2}|^2  (PG/TG)
-    probe = np.abs(grid.fft(e_t**2)) ** 2  # |F{E^2}|^2   (SD = SHG spectrum)
+    probe = np.abs(grid.fft(e_t**2)) ** 2  # |F{E^2}|^2   (SD, THG: SHG spectrum)
     return gate, probe
 
 
@@ -234,10 +240,13 @@ def predicted_centroid(
 ) -> float:
     r"""Predicted marginal centroid (rad/s) from the fundamental spectrum.
 
-    Returns :math:`2\bar\omega_S` for SHG (the marginal sits on the doubled
-    axis) and :math:`\bar\omega_S` for PG/TG/SD (the marginal sits at the
-    fundamental). For SHG and PG/TG this is a hard, phase-independent check; for
-    SD it holds only for a transform-limited or temporally symmetric pulse.
+    Returns :math:`n\bar\omega_S`, where :math:`n` is the harmonic order of the
+    signal carrier (:attr:`~croak.interactions.Interaction.omega0_scale`):
+    :math:`2\bar\omega_S` for SHG (the marginal sits on the doubled axis),
+    :math:`3\bar\omega_S` for THG (the tripled axis) and :math:`\bar\omega_S` for
+    PG/TG/SD (the marginal sits at the fundamental). For SHG and PG/TG this is a
+    hard, phase-independent check; for SD and THG it holds only for a
+    transform-limited or temporally symmetric pulse.
 
     Parameters
     ----------
@@ -246,13 +255,13 @@ def predicted_centroid(
     spectrum : array_like
         Fundamental spectral intensity :math:`S(\omega)` (``>= 0``).
     interaction : str
-        ``"shg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive).
+        ``"shg"``, ``"thg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive).
     """
     name = _normalise_interaction(interaction)
     omega = np.asarray(omega, dtype=float)
     spectrum = np.asarray(spectrum, dtype=float)
     c_s = moment(omega, spectrum, 1)
-    return 2.0 * c_s if name == "shg" else c_s
+    return _harmonic_order(name) * c_s
 
 
 @dataclass(frozen=True)
@@ -262,26 +271,26 @@ class MarginalPrediction:
     Attributes
     ----------
     interaction : str
-        Resolved geometry: ``"shg"``, ``"pg"`` or ``"sd"`` (``"tg"`` maps to
-        ``"pg"``).
+        Resolved geometry: ``"shg"``, ``"thg"``, ``"pg"`` or ``"sd"`` (``"tg"``
+        maps to ``"pg"``).
     omega : numpy.ndarray
         Absolute angular-frequency axis of the predicted marginal (rad/s).
     marginal : numpy.ndarray
         Predicted marginal, peak-normalised to unit maximum.
     centroid : float
-        Predicted centroid (rad/s): :math:`2\bar\omega_S` for SHG, else
-        :math:`\bar\omega_S`.
+        Predicted centroid (rad/s): :math:`2\bar\omega_S` for SHG,
+        :math:`3\bar\omega_S` for THG, else :math:`\bar\omega_S`.
     rms_width : float
         Predicted RMS width (rad/s): the exact :math:`\sqrt2\,\sigma_S` for SHG,
         otherwise the transform-limited width :math:`\sigma_\mathrm{TL}`.
     width_bracket : tuple of float or None
         ``(lower, upper)`` RMS-width bracket. For PG/TG the measured width should
         lie in ``[\sigma_S, \sigma_\mathrm{TL}]`` (lower bound rigorous, upper
-        soft). For SD only the lower bound :math:`\sigma_S` is rigorous
+        soft). For SD and THG only the lower bound :math:`\sigma_S` is rigorous
         (``upper`` is ``None``). ``None`` for SHG (the width is exact).
     centroid_is_hard : bool
         Whether the centroid is a rigorous, phase-independent check (SHG, PG/TG)
-        or a soft TL/symmetric anchor (SD).
+        or a soft TL/symmetric anchor (SD, THG).
     width_is_hard : bool
         Whether the RMS width is an exact check (SHG only).
     sigma_spectrum : float
@@ -305,7 +314,7 @@ def predicted_marginal(
     r"""Predict the FROG marginal and its checks from the fundamental spectrum.
 
     Computes the predicted marginal shape by spectral convolution (exact for
-    SHG, transform-limited for PG/TG/SD), then places it on the analytically
+    SHG, transform-limited for PG/TG/SD/THG), then places it on the analytically
     predicted centroid and reports the centroid/width consistency anchors. The
     shape comes from the numerics; the placement from the exact centroid identity
     :math:`\bar\omega[M] = \bar\omega[|\tilde P|^2] + \bar\omega[|\tilde g|^2]`,
@@ -319,13 +328,15 @@ def predicted_marginal(
     spectrum : array_like
         Fundamental spectral intensity :math:`S(\omega)` (``>= 0``).
     interaction : str
-        ``"shg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive); ``"tg"``
-        is identical to ``"pg"`` (the transient-grating gate is :math:`|E|^2`).
+        ``"shg"``, ``"thg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive);
+        ``"tg"`` is identical to ``"pg"`` (the transient-grating gate is
+        :math:`|E|^2`).
 
     Returns
     -------
     MarginalPrediction
-        The predicted marginal on its own (doubled, for SHG) frequency axis and
+        The predicted marginal on its own (doubled for SHG, tripled for THG)
+        frequency axis and
         the centroid/width anchors.
 
     Raises
@@ -354,17 +365,24 @@ def predicted_marginal(
         gate, probe = _transform_limited_intensity_factors(omega, spectrum)
         if name == "pg":
             shape = np.convolve(spectrum, gate)
-        else:  # sd: |F{E^2}|^2 * S(-omega)
+        elif name == "thg":
+            # E^2(t) G(t - tau): the undelayed factor is E^2, the gate is E itself
+            # (unconjugated), so the marginal is |F{E^2}|^2 * S(+omega).
+            shape = np.convolve(probe, spectrum)
+        else:  # sd: E^2 conj(G) -> |F{E^2}|^2 * S(-omega)
             shape = np.convolve(probe, spectrum[::-1])
         # The predicted (TL) marginal width is the width of the convolved shape.
         bracket = (sigma_s, _width_of_shape(shape, domega))
         rms = bracket[1] if bracket[1] is not None else sigma_s
-        centroid_is_hard = name == "pg"  # exact for PG/TG, soft (TL) for SD
+        centroid_is_hard = name == "pg"  # exact for PG/TG, soft (TL) for SD/THG
         width_is_hard = False
-        if name == "sd":
+        if name in ("sd", "thg"):
+            # Variances add under convolution, so sigma^2 = sigma_{E^2}^2 +
+            # sigma_S^2 >= sigma_S^2 for any phase; the TL width of the phase-
+            # dependent |F{E^2}|^2 factor is no bound (chirp can narrow it).
             bracket = (sigma_s, None)  # only the lower bound is rigorous
 
-    pred_centroid = 2.0 * c_s if name == "shg" else c_s
+    pred_centroid = _harmonic_order(name) * c_s
     # Place the shape so its centroid equals the analytic prediction (spacing is
     # preserved by the linear convolution), then peak-normalise for overlay.
     axis = np.arange(shape.size, dtype=float) * domega
@@ -413,7 +431,8 @@ def auto_third_order_exponent(
     **centroid** of the corrected marginal (computed as an angular-frequency
     density, within a wavelength ``window``) equals the centroid predicted from
     the independent spectrum (:func:`predicted_centroid`: :math:`\bar\omega_S` at
-    the fundamental for PG/TG/SD, :math:`2\bar\omega_S` for SHG).
+    the fundamental for PG/TG/SD, :math:`2\bar\omega_S` for SHG,
+    :math:`3\bar\omega_S` for THG).
 
     ``target_centroid`` (rad/s) overrides the spectrum-derived target. Pass the
     centroid of an already-computed prediction so the matched centroid is exactly
@@ -436,7 +455,7 @@ def auto_third_order_exponent(
     lam_spec, Ilam_spec : array_like
         Independent fundamental spectrum and its wavelength grid (m).
     interaction : str
-        ``"shg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive).
+        ``"shg"``, ``"thg"``, ``"sd"``, ``"pg"`` or ``"tg"`` (case-insensitive).
     window : tuple of float, optional
         ``(lo, hi)`` trust window in metres (default ``(210e-9, 1000e-9)``); only
         wavelengths inside it enter the centroid.
@@ -518,5 +537,15 @@ def _normalise_interaction(interaction: str) -> str:
     name = str(interaction).lower()
     if name == "tg":
         return "pg"
-    get_interaction(name)  # raises ValueError for anything but shg/sd/pg
+    get_interaction(name)  # raises ValueError for anything but shg/thg/sd/pg
     return name
+
+
+def _harmonic_order(name: str) -> float:
+    """Return the marginal-centroid multiple of the spectrum centroid.
+
+    The marginal sits on the signal carrier, so its centroid is the fundamental
+    centroid times the harmonic order — the interaction's ``omega0_scale`` (2 for
+    SHG, 3 for THG, 1 for the chi(3) PG/TG/SD signals at the fundamental).
+    """
+    return get_interaction(name).omega0_scale

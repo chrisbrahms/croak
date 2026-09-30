@@ -4,16 +4,18 @@ The predicted-marginal physics rests on two convolution identities that hold for
 any pulse: marginal centroids and variances are the sums of the factor centroids
 and variances. These tests assert the resulting hard anchors per geometry
 (SHG: ``2ω̄_S`` / ``√2 σ_S``; PG/TG: ``ω̄_S`` exact, width ``> σ_S``; SD:
-``≈ ω̄_S`` at TL) and that the centroid-matching exponent picker recovers a known
-``(λ/µm)^n`` tilt.
+``≈ ω̄_S`` at TL; THG: ``≈ 3ω̄_S`` at TL, width ``> σ_S``) and that the
+centroid-matching exponent picker recovers a known ``(λ/µm)^n`` tilt.
 """
 
 import numpy as np
 import pytest
 
 from croak import marginal_checks as mc
+from croak.forward import maketrace
 from croak.grid import Grid
 from croak.maths import wlfreq
+from croak.pulses import gaussian_pulse
 
 
 @pytest.fixture
@@ -84,6 +86,54 @@ def test_sd_centroid_at_tl_and_lower_bound_only(gaussian_spectrum):
     assert pred.rms_width > sigma_omega
 
 
+def test_thg_centroid_triples_and_lower_bound_only(gaussian_spectrum):
+    """THG: centroid ≈ 3ω̄_S at TL (soft); TL width √3 σ_S; only σ_S is a bound.
+
+    For a TL Gaussian |F{E²}|² has width √2 σ_S, and convolving with S adds σ_S²
+    in quadrature, so the predicted marginal width is exactly √3 σ_S.
+    """
+    omega, s, omega0, sigma_omega = gaussian_spectrum
+    pred = mc.predicted_marginal(omega, s, "THG")
+    assert pred.interaction == "thg"
+    assert not pred.centroid_is_hard and not pred.width_is_hard
+    np.testing.assert_allclose(pred.centroid, 3.0 * omega0, rtol=1e-6)
+    np.testing.assert_allclose(mc.centroid(pred.omega, pred.marginal), 3.0 * omega0)
+    np.testing.assert_allclose(pred.rms_width, np.sqrt(3.0) * sigma_omega, rtol=1e-3)
+    lower, upper = pred.width_bracket
+    assert upper is None
+    np.testing.assert_allclose(lower, sigma_omega, rtol=1e-3)
+
+
+@pytest.mark.parametrize("gdd", [0.0, 40e-30])
+def test_thg_prediction_matches_simulated_trace_marginal(gdd):
+    """The delay-integrated THG trace has the predicted centroid and width bound.
+
+    At TL the whole predicted marginal matches; with a linear chirp the centroid
+    stays at 3ω̄_S (the Gaussian's chirp is odd in time) while the width can only
+    grow above σ_S.
+    """
+    omega0 = float(wlfreq(800e-9))
+    g = Grid(512, dt=0.4e-15)
+    ew = gaussian_pulse(g, 8e-15, phases=[gdd])
+    delays = np.arange(-100e-15, 100e-15 + 1e-18, 0.4e-15)  # covers the whole trace
+    trace = maketrace(g.omega, delays, ew, "thg", normalize=False)
+    omega_signal = g.omega + 3.0 * omega0
+    measured = trace.sum(axis=1)
+
+    omega = g.omega + omega0
+    spectrum = np.abs(ew) ** 2
+    pred = mc.predicted_marginal(omega, spectrum, "thg")
+    np.testing.assert_allclose(
+        mc.centroid(omega_signal, measured), pred.centroid, rtol=1e-6
+    )
+    width = mc.rms_width(omega_signal, measured)
+    assert width > pred.width_bracket[0]
+    if gdd == 0.0:
+        np.testing.assert_allclose(width, pred.rms_width, rtol=1e-3)
+        on_grid = np.interp(omega_signal, pred.omega, pred.marginal)
+        np.testing.assert_allclose(measured / measured.max(), on_grid, atol=1e-3)
+
+
 def test_tg_is_identical_to_pg(gaussian_spectrum):
     omega, s, _, _ = gaussian_spectrum
     tg = mc.predicted_marginal(omega, s, "TG")
@@ -95,7 +145,7 @@ def test_tg_is_identical_to_pg(gaussian_spectrum):
 
 @pytest.mark.parametrize(
     ("interaction", "factor"),
-    [("shg", 2.0), ("pg", 1.0), ("sd", 1.0), ("tg", 1.0)],
+    [("shg", 2.0), ("thg", 3.0), ("pg", 1.0), ("sd", 1.0), ("tg", 1.0)],
 )
 def test_predicted_centroid(gaussian_spectrum, interaction, factor):
     omega, s, omega0, _ = gaussian_spectrum
